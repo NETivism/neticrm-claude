@@ -306,6 +306,104 @@ access mymodule feature:
   description: 'Allow users to access MyModule features'
 ```
 
+## Multi-language Translation (t)
+
+All user-facing strings in Drupal modules must use translation functions.
+
+### Drupal 7 Translation
+
+```php
+// Simple text
+t('Save')
+t('Contact Information')
+
+// With placeholders (use ! prefix)
+t('Hello !name', array('!name' => $name))
+t('Created !count records', array('!count' => $count))
+
+// With HTML-safe placeholders (use @ prefix for escaped output)
+t('Welcome @username', array('@username' => $userInput))
+
+// Multiple placeholders
+t('!count of !total items', array('!count' => $count, '!total' => $total))
+```
+
+#### Drupal 7 Placeholder Types
+| Prefix | Behavior | Use Case |
+|--------|----------|----------|
+| `!` | No escaping | Trusted values, pre-escaped HTML |
+| `@` | HTML escaped | User input, untrusted content |
+| `%` | HTML escaped + `<em>` wrapped | Emphasized user values |
+
+### Drupal 10 Translation
+
+```php
+// In classes extending StringTranslationTrait (controllers, forms, etc.)
+$this->t('Save')
+$this->t('Hello @name', ['@name' => $name])
+
+// Global function (less preferred)
+t('Simple text')
+
+// In render arrays
+'#markup' => $this->t('Welcome message')
+
+// Plural forms
+$this->formatPlural($count, 'One item', '@count items')
+```
+
+#### Drupal 10 Placeholder Types
+| Prefix | Behavior | Use Case |
+|--------|----------|----------|
+| `@` | HTML escaped (default) | Most values |
+| `%` | HTML escaped + `<em>` wrapped | Emphasized values |
+| `:` | URL-safe escaped | URL values |
+
+### Common Patterns
+
+```php
+// Form labels (Drupal 7)
+$form['name'] = array(
+  '#type' => 'textfield',
+  '#title' => t('Name'),
+  '#required' => TRUE,
+);
+
+// Form labels (Drupal 10)
+$form['name'] = [
+  '#type' => 'textfield',
+  '#title' => $this->t('Name'),
+  '#required' => TRUE,
+];
+
+// Status messages (Drupal 7)
+drupal_set_message(t('Record saved successfully.'));
+
+// Status messages (Drupal 10)
+\Drupal::messenger()->addStatus($this->t('Record saved.'));
+
+// Menu/route titles (Drupal 7)
+$items['my/path'] = array(
+  'title' => 'My Page Title',  // Auto-translated
+  'title callback' => 't',
+);
+
+// Route titles (Drupal 10) - in .routing.yml
+# _title is auto-translated
+mymodule.page:
+  path: '/my/path'
+  defaults:
+    _title: 'My Page Title'
+```
+
+### Best Practices
+- **Drupal 7**: Use global `t()` function
+- **Drupal 10**: Use `$this->t()` in classes, avoid global `t()`
+- **Always use placeholders** instead of string concatenation
+- **Use `@` prefix** for user-provided values (auto-escaped)
+- **Use `!` prefix** (D7) only for trusted/pre-escaped content
+- **Don't translate**: variable content, technical identifiers, log messages
+
 ## Code Style Guidelines
 
 ### PHP Code Standards

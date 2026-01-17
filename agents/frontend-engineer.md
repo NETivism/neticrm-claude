@@ -61,12 +61,53 @@ Located in `/CRM/Core/Smarty/plugins/`:
 - `{crmDate}` - Format date values
 - `{ts}` - Translation/localization strings
 
-#### Translation Pattern
+#### Multi-language Translation ({ts})
+All user-facing text must be wrapped with `{ts}` for translation support.
+
+**Basic Syntax:**
 ```smarty
-{ts}Text to translate{/ts}
-{ts 1=$variable}Text with %1 placeholder{/ts}
-{ts domain="org.civicrm.neticrm"}Domain-specific translation{/ts}
+{ts}Simple text{/ts}
+{ts 1=$name}Hello %1{/ts}
+{ts 1=$url 2=$label}Click <a href='%1'>%2</a>{/ts}
 ```
+
+**Escape Modes (critical for JavaScript):**
+```smarty
+{* Default: HTML context *}
+{ts}Normal text{/ts}
+
+{* JavaScript context - REQUIRED when inside <script> or JS strings *}
+alert("{ts escape='js'}Confirm delete?{/ts}");
+var msg = "{ts escape='js' 1=$name}Hello %1{/ts}";
+```
+
+**Plural Forms:**
+```smarty
+{ts count=$count plural='%count items selected'}One item selected{/ts}
+{ts count=$n plural='Deleted %count records'}Deleted one record{/ts}
+```
+
+**Common Patterns:**
+```smarty
+{* Table headers *}
+<th>{ts}Name{/ts}</th>
+<th>{ts}Amount{/ts}</th>
+
+{* Buttons *}
+<button>{ts}Save{/ts}</button>
+
+{* Links with placeholders *}
+{ts 1=$editUrl}Click <a href='%1'>here</a> to edit{/ts}
+
+{* Empty state messages *}
+{ts 1=$addUrl}No records found. <a href='%1'>Add one</a>{/ts}
+```
+
+**Best Practices:**
+- Always use `escape='js'` inside JavaScript strings
+- Use numbered parameters (`1=`, `2=`) not direct variable interpolation
+- Keep translated text as simple sentences
+- Don't break sentences across multiple `{ts}` blocks
 
 ### CiviCRM Resource Integration
 - Use `CRM_Core_Resources::singleton()` for adding JS/CSS:

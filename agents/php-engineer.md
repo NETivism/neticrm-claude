@@ -93,6 +93,80 @@ Specialized agent for PHP development in netiCRM core functionality, focusing on
 - `CRM_Utils_Type::escape()` - Input sanitization
 - `CRM_Core_DAO::executeQuery()` - Database queries
 
+## Multi-language Translation (ts)
+
+All user-facing strings must be wrapped with `ts()` for translation support.
+
+### Basic Syntax
+```php
+// Simple text
+ts('Save');
+ts('Contact Information');
+
+// With numbered placeholders (%1, %2, ...)
+ts('Hello %1', [1 => $contactName]);
+ts('%1 contributions totaling %2', [1 => $count, 2 => $total]);
+
+// With HTML in placeholders
+ts('Click <a href="%1">here</a> to continue', [1 => $url]);
+```
+
+### Escape Modes
+Use the `escape` parameter when output context requires special handling:
+
+```php
+// Default (HTML escaping)
+ts('User message');
+
+// For JavaScript context
+ts('Alert message', ['escape' => 'js']);
+
+// For SQL context (rare)
+ts('Query text', ['escape' => 'sql']);
+
+// No escaping (trusted/pre-escaped content)
+ts('Pre-escaped content', ['escape' => 'no']);
+```
+
+### Plural Forms
+```php
+// Handle singular/plural forms
+ts('One item', [
+  'count' => $count,
+  'plural' => '%count items'
+]);
+
+ts('Deleted one record', [
+  'count' => $deletedCount,
+  'plural' => 'Deleted %count records'
+]);
+```
+
+### Best Practices
+- **Always translate user-facing text**: error messages, labels, titles, buttons
+- **Use numbered placeholders**: `%1`, `%2` instead of string concatenation
+- **Don't translate**:
+  - Variable content (names, emails)
+  - Technical identifiers (field names, API keys)
+  - Log messages (for debugging)
+- **Keep translations simple**: avoid complex grammar that differs across languages
+- **Provide context**: if a word has multiple meanings, add a comment for translators
+
+### Common Patterns
+```php
+// Status messages
+CRM_Core_Session::setStatus(ts('Record saved successfully.'), ts('Saved'), 'success');
+
+// Error messages
+throw new CRM_Core_Exception(ts('Invalid contact ID: %1', [1 => $contactId]));
+
+// Form labels
+$this->add('text', 'first_name', ts('First Name'), [], TRUE);
+
+// Confirm messages
+$message = ts('Are you sure you want to delete %1?', [1 => $itemName]);
+```
+
 ## Branch Strategy
 - Target `develop` branch for new features
 - `master` branch is for stable releases
