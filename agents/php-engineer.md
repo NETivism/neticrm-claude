@@ -7,172 +7,56 @@ model: opus
 
 # PHP Agent - netiCRM PHP Development Specialist
 
-## Purpose
-Specialized agent for PHP development in netiCRM core functionality, focusing on business logic, API implementations, and external integrations.
-
 ## Scope
-- **Primary Directories**: `/CRM/`, `/api/`, `/external/`
-- **Language**: PHP 7.3+ compatible syntax
-- **Framework**: CiviCRM/netiCRM framework
+| Path | Purpose |
+|------|---------|
+| `/CRM/` | Core classes (BAO, DAO, Form) |
+| `/api/v3/` | API endpoints |
+| `/external/` | External integrations |
 
-## Technical Requirements
+## Code Style
+- **Indentation**: 2 spaces
+- **Class Names**: CamelCase (`CRM_Contribute_BAO_Contribution`)
+- **Methods**: camelCase (`processContribution()`)
+- **Comparisons**: Always use `===` and `!==`
+- **PHP Version**: 7.3+ compatible
 
-### PHP Version Compatibility
-- Must maintain compatibility with PHP 7.3+
-- Avoid features introduced in PHP 8.0+ unless explicitly approved
-- Use type hints carefully to maintain backward compatibility
+## Class Structure
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| DAO | `/CRM/**/DAO/` | Auto-generated from XML, never edit |
+| BAO | `/CRM/**/BAO/` | Business logic (implement here) |
+| Form | `/CRM/**/Form/` | Form handling (`preProcess()` → `buildForm()` → `postProcess()`) |
+| API | `/api/v3/` | API endpoints |
 
-### Code Style Guidelines
-- **Indentation**: 2 spaces (not tabs)
-- **Class Names**: CamelCase (e.g., `CRM_Contribute_BAO_Contribution`)
-- **Method Names**: camelCase (e.g., `processContribution()`)
-- **Constants**: UPPER_CASE with underscores
-- **Comparisons**: Always use strict equality (`===` and `!==`)
-- **Error Handling**: Use proper try/catch blocks with appropriate logging
+Class mapping: `CRM_Core_Transaction` → `/CRM/Core/Transaction.php`
 
-### File and Class Structure
-- **Class to File Mapping**: `CRM_Core_Transaction` → `/CRM/Core/Transaction.php`
-- Each class in its own file following the naming convention
-- Use proper namespace-like class naming (underscores represent directory separators)
-- Check logic in `CRM/Core/ClassLoader.php` to understand autoloading
-
-### Directory Structure
+## Translation (ts)
+```php
+ts('Simple text');
+ts('Hello %1', [1 => $name]);
+ts('Alert', ['escape' => 'js']);  // For JS context
+ts('One item', ['count' => $n, 'plural' => '%count items']);
 ```
-/CRM/
-├── Core/          - Core functionality
-├── Contribute/    - Contribution/donation handling
-├── Contact/       - Contact management
-├── Event/         - Event management
-└── ...
-
-/api/
-├── v2/           - API version 2(deprecated)
-└── v3/           - API version 3
-
-/external/        - External integrations
-```
-
-## Development Patterns
-
-### DAO (Data Access Object)
-- DAO classes are auto-generated from XML schema
-- Located in `/CRM/**/DAO/` directories
-- **Do not modify DAO files directly** - regenerate from schema
-
-### BAO (Business Access Object)
-- Business logic layer built on top of DAOs
-- Located in `/CRM/**/BAO/` directories
-- This is where custom logic should be implemented
-
-### Form Processing
-- Form classes in `/CRM/**/Form/` directories
-- Follow pattern: `preProcess()` → `buildForm()` → `postProcess()`
-
-### API Development
-- API v3 preferred for new development
-- Follow existing patterns in `/api/v3/`
-- Always validate input parameters
-- Return standardized error/success responses
-
-## Testing
-- **Setup test DB**: `mysql -u root -e "CREATE DATABASE civicrm_tests_dev CHARACTER SET utf8 COLLATE utf8_unicode_ci"`
-- **Load schema**: `mysql -u root civicrm_tests_dev < sql/civicrm.mysql && mysql -u root civicrm_tests_dev < sql/civicrm_generated.mysql`
-- **Run tests**: `cd tests/phpunit && CIVICRM_TEST_DSN=mysqli://root@localhost/civicrm_tests_dev phpunit --colors <test_file>`
-
-## Security Considerations
-- Always sanitize user input
-- Use parameterized queries (never string concatenation for SQL)
-- Validate permissions before data access
-- Escape output properly based on context (HTML, JavaScript, SQL)
-- Follow OWASP guidelines for common vulnerabilities
+**Translate**: user-facing messages, labels, buttons
+**Don't translate**: logs, variable content, technical identifiers
 
 ## Common Utilities
-- `CRM_Core_Error::debug_var()` - Debugging output
-- `CRM_Core_Session::setStatus()` - User messages
-- `CRM_Utils_Array::value()` - Safe array access
-- `CRM_Utils_Type::escape()` - Input sanitization
-- `CRM_Core_DAO::executeQuery()` - Database queries
-
-## Multi-language Translation (ts)
-
-All user-facing strings must be wrapped with `ts()` for translation support.
-
-### Basic Syntax
 ```php
-// Simple text
-ts('Save');
-ts('Contact Information');
-
-// With numbered placeholders (%1, %2, ...)
-ts('Hello %1', [1 => $contactName]);
-ts('%1 contributions totaling %2', [1 => $count, 2 => $total]);
-
-// With HTML in placeholders
-ts('Click <a href="%1">here</a> to continue', [1 => $url]);
+CRM_Core_Error::debug_var('label', $var);
+CRM_Core_Session::setStatus(ts('Saved'), ts('Success'), 'success');
+CRM_Utils_Array::value('key', $array, $default);
+CRM_Core_DAO::executeQuery($sql, $params);
 ```
 
-### Escape Modes
-Use the `escape` parameter when output context requires special handling:
-
-```php
-// Default (HTML escaping)
-ts('User message');
-
-// For JavaScript context
-ts('Alert message', ['escape' => 'js']);
-
-// For SQL context (rare)
-ts('Query text', ['escape' => 'sql']);
-
-// No escaping (trusted/pre-escaped content)
-ts('Pre-escaped content', ['escape' => 'no']);
+## Testing
+```bash
+mysql -u root -e "CREATE DATABASE civicrm_tests_dev CHARACTER SET utf8 COLLATE utf8_unicode_ci"
+mysql -u root civicrm_tests_dev < sql/civicrm.mysql
+cd tests/phpunit && CIVICRM_TEST_DSN=mysqli://root@localhost/civicrm_tests_dev phpunit <test_file>
 ```
 
-### Plural Forms
-```php
-// Handle singular/plural forms
-ts('One item', [
-  'count' => $count,
-  'plural' => '%count items'
-]);
-
-ts('Deleted one record', [
-  'count' => $deletedCount,
-  'plural' => 'Deleted %count records'
-]);
-```
-
-### Best Practices
-- **Always translate user-facing text**: error messages, labels, titles, buttons
-- **Use numbered placeholders**: `%1`, `%2` instead of string concatenation
-- **Don't translate**:
-  - Variable content (names, emails)
-  - Technical identifiers (field names, API keys)
-  - Log messages (for debugging)
-- **Keep translations simple**: avoid complex grammar that differs across languages
-- **Provide context**: if a word has multiple meanings, add a comment for translators
-
-### Common Patterns
-```php
-// Status messages
-CRM_Core_Session::setStatus(ts('Record saved successfully.'), ts('Saved'), 'success');
-
-// Error messages
-throw new CRM_Core_Exception(ts('Invalid contact ID: %1', [1 => $contactId]));
-
-// Form labels
-$this->add('text', 'first_name', ts('First Name'), [], TRUE);
-
-// Confirm messages
-$message = ts('Are you sure you want to delete %1?', [1 => $itemName]);
-```
-
-## Branch Strategy
-- Target `develop` branch for new features
-- `master` branch is for stable releases
-- `hotfix` branch for urgent production fixes
-
-## Related Documentation
-- See `/CLAUDE.md` for general development guidelines
-- Use database-agent for database schema work
-- Use frontend-engineer for template integration
+## Security
+- Always use parameterized queries
+- Validate permissions before data access
+- Sanitize input, escape output
