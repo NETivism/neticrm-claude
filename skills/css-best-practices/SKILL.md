@@ -210,7 +210,106 @@ body:has(.crm-container) {
 }
 ```
 
-### 3. 架構優先,避免暴力解法
+### 3. CSS 技術可行性評估
+
+**CRITICAL**: 在使用任何「現代 CSS 特性」前，**必須先評估瀏覽器支援度是否符合公司政策**。
+
+#### 為何需要評估？
+
+netiCRM/CiviCRM 專案需要支援：
+- **iOS/iPadOS N-2 滾動式支援政策**（N = 當前最新版本）
+- **iOS WebKit 限制**：所有瀏覽器（包含 Chrome、Firefox）都使用 Safari WebKit 引擎
+- 這意味著某些「現代」CSS 特性在舊版 iOS 上可能無法使用
+
+#### 核心概念：核心功能 vs 加分特效
+
+**核心功能**（影響網站主要架構排版或內容顯示）
+- 必須支援到「僅確保基本瀏覽」版本（N-2）
+- 建議達到 [Baseline Widely available](https://developer.mozilla.org/en-US/docs/Glossary/Baseline/Compatibility#baseline_badges) 標準
+- 範例：CSS Grid、Flexbox、`:has()` 選擇器
+
+**加分特效**（提升體驗的裝飾性質）
+- 只需支援「完整支援」版本（N 和 N-1）
+- 建議達到 [Baseline Newly available](https://developer.mozilla.org/en-US/docs/Glossary/Baseline/Compatibility#baseline_badges) 標準
+- 可使用漸進增強（Graceful Degradation）
+- 範例：Scroll-driven Animations、text-autospace
+
+#### 評估流程（必須執行）
+
+**步驟 1: 確認當前支援政策**
+
+使用 WebSearch 查詢最新 iOS 版本：
+```
+查詢語句範例：
+"iOS version history" site:wikipedia.org
+"latest iOS version 2026"
+```
+
+確認當前的 N、N-1、N-2 值（例如：2026.01 時為 26、18、17）
+
+**步驟 2: 查詢技術支援度**
+
+使用 WebFetch 或 WebSearch 查詢該 CSS 技術的瀏覽器支援度：
+
+```
+WebFetch 範例：
+URL: https://caniuse.com/?search=[CSS技術名稱]
+Prompt: "請提取這個 CSS 技術的瀏覽器支援資訊，特別是 iOS Safari 的最低支援版本和 Baseline 狀態"
+
+WebSearch 範例：
+"CSS Grid browser support iOS Safari"
+"CSS :has() caniuse iOS"
+```
+
+**步驟 3: 判斷技術類型**
+
+- 這個技術是「核心功能」還是「加分特效」？
+- 核心功能：若不支援會導致版面崩壞或內容無法顯示
+- 加分特效：若不支援僅缺少額外效果，但不影響基本閱讀
+
+**步驟 4: 做出決策**
+
+- **核心功能**：iOS 最低支援版本必須 <= N-2
+- **加分特效**：iOS 最低支援版本建議 <= N-1，若不符合則使用漸進增強
+
+#### 快速決策範例
+
+```css
+/* ✅ CSS Grid - 核心功能，iOS 10.3+ 支援，遠低於 N-2 */
+.container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ✅ :has() - 核心功能，iOS 15.4+ 支援，已覆蓋 N-2 */
+.card:has(img) {
+  display: grid;
+}
+
+/* ⚠️ CSS Nesting - 核心功能，但 iOS 17.0-17.1 僅部分支援 */
+/* 需使用 SCSS/SASS 轉譯，或等到支援度提升 */
+
+/* ✅ text-autospace - 加分特效，iOS 18.4+ 支援 */
+/* 可使用，舊版自然降級不影響閱讀 */
+.content {
+  text-autospace: normal;
+}
+
+/* ✅ Scroll-driven Animations - 加分特效，iOS 18+ 支援 */
+/* 可使用，舊版無動畫但不影響功能 */
+```
+
+#### 詳細評估指引
+
+參考 [browser-support-policy.md](references/browser-support-policy.md) 了解：
+- 完整的瀏覽器支援政策
+- iOS WebKit 限制說明
+- 詳細的評估流程和決策樹
+- 實際案例分析（CSS Grid、CSS Nesting、:has()、text-autospace 等）
+
+**重要**: 每次使用新的 CSS 技術前，務必執行評估流程，確保符合公司支援政策。
+
+### 4. 架構優先,避免暴力解法
 
 #### 權重管理 (Specificity)
 
@@ -267,7 +366,7 @@ div.container > ul.list > li.item > a.link {
 /* 這不算過度限定,因為 .crm-container 是架構層級的隔離容器 */
 ```
 
-### 4. 語意化命名與可維護性
+### 5. 語意化命名與可維護性
 
 #### 命名規範 (推薦 BEM 或功能性命名)
 
@@ -317,7 +416,7 @@ div.container > ul.list > li.item > a.link {
 }
 ```
 
-### 5. 響應式設計最佳實踐
+### 6. 響應式設計最佳實踐
 
 ```css
 /* ✅ 使用 Mobile-First 方法 */
@@ -457,15 +556,31 @@ body:has(.crm-container) {
 
 在完成 CSS 程式碼前,逐一檢查:
 
+### 瀏覽器支援度評估
+- [ ] **[使用新 CSS 技術]** 是否已查詢當前的 iOS 版本支援政策（N, N-1, N-2）?
+- [ ] **[使用新 CSS 技術]** 是否已在 caniuse.com 或 MDN 查詢該技術的支援度?
+- [ ] **[使用新 CSS 技術]** 是否已確認該技術在 iOS Safari 的最低支援版本?
+- [ ] **[使用新 CSS 技術]** 是否已判斷該技術是「核心功能」還是「加分特效」?
+- [ ] **[核心功能]** 確認最低支援版本 <= N-2?
+- [ ] **[加分特效]** 確認可在舊版自然降級，不影響基本瀏覽?
+
+### netiCRM/CiviCRM 專案規範
 - [ ] **[CiviCRM 專案]** 如果是 netiCRM/CiviCRM,選擇器是否加上 `.crm-container` 前綴?
+- [ ] **[CiviCRM 專案]** 如果設定 body/html 樣式，是否使用 `body:has(.crm-container)` 或在 `.crm-container` 內設定?
+
+### 程式碼品質
 - [ ] 是否使用了現代 CSS 特性? (Grid/Flexbox 而非 float)
 - [ ] 選擇器權重是否合理? (避免過度限定,但 CiviCRM 的 `.crm-container` 除外)
 - [ ] 是否使用了 `!important`? (如果有,是否真的必要並加上註解?)
 - [ ] class 命名是否語意化? (功能導向而非外觀導向)
 - [ ] 是否有重複的樣式可以提取?
+
+### 響應式與無障礙
 - [ ] 響應式設計是否使用 mobile-first?
 - [ ] 是否考慮了 accessibility? (focus states, screen readers)
 - [ ] 顏色對比度是否符合 WCAG 標準?
+
+### 架構與維護性
 - [ ] 是否使用了 CSS Variables 管理主題變數?
 - [ ] position/z-index 的定位上下文是否正確?
 
@@ -535,6 +650,8 @@ body:has(.crm-container) {
 
 ## 參考資源
 
+- **瀏覽器支援政策與評估指引**: [browser-support-policy.md](references/browser-support-policy.md) - 公司瀏覽器支援規格、iOS WebKit 限制、CSS 技術可行性評估流程
+- **現代 CSS 特性支援表**: [modern-css-features.md](references/modern-css-features.md) - 現代 CSS 特性列表與支援度查詢方法
+- **netiCRM/CiviCRM 專案指引**: [neticrm-guidelines.md](references/neticrm-guidelines.md) - `.crm-container` 前綴規範與完整說明
 - 詳細的 Tailwind CSS 指引: [tailwind-guidelines.md](references/tailwind-guidelines.md)
 - CSS Modules 使用規範: [css-modules-guidelines.md](references/css-modules-guidelines.md)
-- 現代 CSS 特性支援表: [modern-css-features.md](references/modern-css-features.md)

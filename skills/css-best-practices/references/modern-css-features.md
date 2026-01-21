@@ -1,6 +1,100 @@
-# 現代 CSS 特性支援表 (2024)
+# 現代 CSS 特性支援表
 
 本文件列出現代 CSS 特性及其瀏覽器支援狀況,幫助判斷是否可以安全使用。
+
+**重要提醒**：本文件的支援度資訊會隨時間變化。在使用任何新的 CSS 技術前，**必須即時查詢最新的瀏覽器支援度**。
+
+---
+
+## 如何查詢瀏覽器支援度
+
+### 步驟 1: 確認當前 iOS 支援政策
+
+公司採用 **iOS N-2 滾動式支援政策**（N = 最新版本）。
+
+**查詢最新 iOS 版本 (N)**
+
+使用 WebSearch 查詢：
+```
+查詢語句範例：
+"iOS version history" site:wikipedia.org
+"latest iOS version 2026"
+```
+
+或使用 WebFetch：
+```
+URL: https://en.wikipedia.org/wiki/IOS_version_history
+Prompt: "請告訴我目前最新的 iOS 主要版本號"
+```
+
+確認當前的：
+- **N**（最新版本）- 完整支援
+- **N-1**（前一版本）- 完整支援
+- **N-2**（再前一版本）- 僅確保基本瀏覽
+
+### 步驟 2: 查詢 CSS 技術支援度
+
+**使用 caniuse.com 查詢**
+
+WebFetch 方式：
+```
+URL: https://caniuse.com/?search=[CSS技術名稱]
+Prompt: "請提取這個 CSS 技術的以下資訊：
+1. iOS Safari 的最低支援版本
+2. Baseline 狀態（Widely available 或 Newly available）
+3. 整體瀏覽器支援百分比"
+```
+
+WebSearch 方式：
+```
+查詢語句範例：
+"CSS Grid caniuse iOS Safari"
+"CSS :has() browser support iOS"
+"CSS Nesting baseline"
+```
+
+**使用 MDN 查詢**
+
+WebFetch 方式：
+```
+URL: https://developer.mozilla.org/en-US/docs/Web/CSS/[CSS屬性名稱]
+Prompt: "請提取這個 CSS 技術的瀏覽器相容性資訊，特別是：
+1. iOS Safari 的支援版本
+2. Baseline 標註狀態
+3. 是否有特殊限制或已知問題"
+```
+
+WebSearch 方式：
+```
+查詢語句範例：
+"CSS container queries MDN compatibility"
+"CSS nesting Safari support MDN"
+```
+
+### 步驟 3: 理解 Baseline 標準
+
+**Baseline Widely available** 🟢
+- 該技術已在所有主流瀏覽器穩定支援 **至少 30 個月**
+- 可安全用於核心功能
+- 範例：CSS Grid、Flexbox、CSS Variables
+
+**Baseline Newly available** 🟡
+- 該技術剛在所有主流瀏覽器中可用（未滿 30 個月）
+- 適合用於加分特效或漸進增強
+- 需評估 iOS 支援版本是否符合公司政策
+- 範例：Container Queries、:has() 選擇器
+
+**Not Baseline** 🔴
+- 該技術尚未在所有主流瀏覽器中可用
+- 僅可用於漸進增強的加分特效
+- 必須提供完整的降級方案
+- 範例：某些實驗性 CSS 特性
+
+### 步驟 4: 做出決策
+
+參考 [browser-support-policy.md](browser-support-policy.md) 的決策樹進行評估。
+
+---
 
 ## 安全使用 (>95% 瀏覽器支援)
 
@@ -407,9 +501,11 @@ if ('container' in document.documentElement.style) {
 
 ## 實用資源
 
+- **瀏覽器支援政策**: [browser-support-policy.md](browser-support-policy.md) - 公司瀏覽器支援規格與完整評估指引
 - **Can I Use**: https://caniuse.com/ - 瀏覽器支援查詢
-- **MDN Web Docs**: https://developer.mozilla.org/zh-TW/ - 完整文件
-- **Baseline**: https://web.dev/baseline/ - 跨瀏覽器支援狀態
+- **MDN Web Docs**: https://developer.mozilla.org/zh-TW/ - 完整文件與 Baseline 標註
+- **Baseline**: https://web.dev/baseline/ - 跨瀏覽器支援狀態說明
+- **iOS 版本歷史**: https://en.wikipedia.org/wiki/IOS_version_history - 查詢最新 iOS 版本號
 
 ## 決策流程圖
 
