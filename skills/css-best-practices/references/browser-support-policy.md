@@ -86,6 +86,25 @@ Apple 發布新版 iOS 通常會於每年 9 月，本規範之支援版本將隨
 
 ## CSS 技術可行性評估流程
 
+### ⚠️ 強制性規則：必須即時查詢
+
+**CRITICAL - 必須遵守**：
+
+在評估任何 CSS 技術的瀏覽器支援度時，**嚴禁**直接基於 Claude 的知識截止日期（2025年1月）來判斷。
+
+**必須先執行 WebSearch 或 WebFetch 查詢最新的瀏覽器支援資訊**，然後才能給出結論。
+
+**必須查詢的情況**：
+- 任何看起來是「新的」、「實驗性」或「不常見」的 CSS 技術
+- 任何使用 `::` 偽元素、`@` 規則（除了基本的 @media）的技術
+- 包含 `scroll-`、`container-`、`@layer`、`@property` 等關鍵字的技術
+- 使用者明確要求評估瀏覽器支援度時
+- 當對技術的支援度「不確定」或「沒有把握」時
+
+**可不查詢的例外**：僅限非常成熟的基礎技術（Flexbox、CSS Grid、CSS Variables、transition、animation）
+
+---
+
 ### 核心概念：核心功能 vs 加分特效
 
 **核心功能**（影響網站主要架構排版或內容顯示）
@@ -100,6 +119,12 @@ Apple 發布新版 iOS 通常會於每年 9 月，本規範之支援版本將隨
 
 ### 評估步驟
 
+**步驟 0: 檢查是否需要查詢（必須先執行）**
+
+在進行任何評估前，先判斷是否需要查詢：
+- 這個 CSS 技術是否屬於「必須查詢」的範圍？（見上方強制性規則）
+- 如果是，**立即執行查詢**，不可跳過
+
 **步驟 1: 確認當前支援政策**
 
 使用 WebSearch 查詢最新 iOS 版本：
@@ -111,22 +136,25 @@ Apple 發布新版 iOS 通常會於每年 9 月，本規範之支援版本將隨
 
 確認當前的 N、N-1、N-2 值（例如：2026.01 時為 26、18、17）
 
-**步驟 2: 技術支援度檢查**
+**步驟 2: 技術支援度檢查（強制執行）**
 
-在 [MDN](https://developer.mozilla.org/) 或 [caniuse.com](https://caniuse.com/) 確認該技術標註狀態：
+**必須實際執行查詢**，在 [MDN](https://developer.mozilla.org/) 或 [caniuse.com](https://caniuse.com/) 確認該技術標註狀態：
 
 使用 WebFetch 查詢：
 ```
 URL: https://caniuse.com/?search=[CSS技術名稱]
-Prompt: "請提取這個 CSS 技術的瀏覽器支援資訊，特別是 iOS Safari 的最低支援版本"
+Prompt: "請提取這個 CSS 技術的瀏覽器支援資訊，特別是 iOS Safari 的最低支援版本和 Baseline 狀態"
 ```
 
 或使用 WebSearch：
 ```
 查詢語句範例：
-"CSS Grid browser support iOS Safari"
-"CSS Nesting caniuse iOS"
+"[CSS技術名稱] caniuse 2026"
+"[CSS技術名稱] browser support iOS Safari"
+"[CSS技術名稱] MDN baseline"
 ```
+
+**重要**：必須等待查詢結果後再繼續下一步，不可基於過時知識判斷。
 
 **步驟 3: 判斷技術類型**
 
