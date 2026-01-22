@@ -55,6 +55,16 @@ See agent docs for detailed patterns: **php-engineer**, **frontend-engineer**, *
 | `/neticrm/` | netiCRM extensions |
 | `/drupal/` | civicrm drupal module base dir|
 | `/js/`, `/css/`, `/packages/jquery` | Frontend assets |
+| `/CRM/*/xml/Menu/*.xml` | Route definitions |
+
+### Routing
+Routes in `CRM/*/xml/Menu/*.xml`: `<path>` (URL), `<page_callback>` (handler), `<access_arguments>` (permissions: `,`=AND `;`=OR)
+
+### Permissions
+Defined in `CRM_Core_Permission::basicPermissions()` and `CRM/*/Info.php::getPermissions()`
+- Core: `access CiviCRM`, `administer CiviCRM`, `view/edit/delete contacts`
+- Components: `access CiviContribute`, `access CiviEvent`, `access CiviMember`, etc.
+- Check: `CRM_Core_Permission::check('permission string')`
 
 ## Specialized Agents
 Use these agents for detailed guidance:

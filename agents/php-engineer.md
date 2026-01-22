@@ -31,6 +31,59 @@ model: opus
 
 Class mapping: `CRM_Core_Transaction` → `/CRM/Core/Transaction.php`
 
+## Routing
+
+Routes defined in `CRM/*/xml/Menu/*.xml` (e.g., `CRM/Contribute/xml/Menu/Contribute.xml`)
+
+```xml
+<menu>
+  <!-- Standard page -->
+  <item>
+    <path>civicrm/example</path>
+    <title>Example</title>
+    <page_callback>CRM_Example_Page_MyPage</page_callback>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+
+  <!-- Public endpoint (IPN/webhook) -->
+  <item>
+    <path>payment/ipn</path>
+    <page_callback>CRM_Core_Payment_Example::doIPN</page_callback>
+    <access_callback>1</access_callback>
+    <is_public>true</is_public>
+  </item>
+</menu>
+```
+
+**Key elements**: `path` (URL), `page_callback` (handler class), `access_arguments` (permissions: `,`=AND `;`=OR), `access_callback`=1 + `is_public`=true (public access)
+
+**Optional**: `title`, `desc`, `weight` (order), `adminGroup`, `is_ssl`, `path_arguments`, `component`
+
+## Permissions
+
+Defined in `CRM_Core_Permission::basicPermissions()` (core) and `CRM/*/Info.php::getPermissions()` (components)
+
+**Core permissions** (partial list):
+- `access CiviCRM`, `administer CiviCRM` - basic access/admin
+- `view all contacts`, `edit all contacts`, `delete contacts`
+- `view all activities`, `delete activities`
+- `profile view`, `profile edit`, `profile create`
+
+**Component permissions** (`CRM/*/Info.php`):
+| Component | Permissions |
+|-----------|-------------|
+| Contribute | `access CiviContribute`, `edit contributions`, `make online contributions`, `delete in CiviContribute` |
+| Event | `access CiviEvent`, `edit event participants`, `edit all events`, `register for events`, `view event info` |
+| Member | `access CiviMember`, `edit memberships`, `delete in CiviMember` |
+| Mailing | `access CiviMail`, `delete in CiviMail`, `view public CiviMail content` |
+| Report | `access CiviReport`, `access Report Criteria`, `administer Reports` |
+
+**Check permission in code**:
+```php
+if (CRM_Core_Permission::check('edit contributions')) { ... }
+if (CRM_Core_Permission::check('access CiviCRM') && CRM_Core_Permission::check('administer CiviCRM')) { ... }
+```
+
 ## Translation (ts)
 ```php
 ts('Simple text');
