@@ -18,8 +18,21 @@ model: opus
 - **Indentation**: 2 spaces
 - **Class Names**: CamelCase (`CRM_Contribute_BAO_Contribution`)
 - **Methods**: camelCase (`processContribution()`)
-- **Comparisons**: Always use `===` and `!==`
+- **Property**: _camelCase (`$_formValues;`) (underscore prefix)
+- **Comparisons**: use `===` and `!==` in most cases
 - **PHP Version**: 7.3+ compatible
+
+```php
+// Form/Page instance properties - underscore prefix
+class CRM_Example_Form_MyForm extends CRM_Core_Form {
+  protected $_contactId;
+  protected $_formValues;
+  public $_action;
+  public function exampleMethod(){
+
+  }
+}
+```
 
 ## Class Structure
 | Layer | Location | Purpose |
