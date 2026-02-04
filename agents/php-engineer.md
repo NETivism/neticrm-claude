@@ -50,11 +50,16 @@ CRM_Core_DAO::executeQuery($sql, $params);
 ```
 
 ## Testing
-```bash
-mysql -u root -e "CREATE DATABASE civicrm_tests_dev CHARACTER SET utf8 COLLATE utf8_unicode_ci"
-mysql -u root civicrm_tests_dev < sql/civicrm.mysql
-cd tests/phpunit && CIVICRM_TEST_DSN=mysqli://root@localhost/civicrm_tests_dev phpunit <test_file>
-```
+
+### Test Code Dir
+
+The test code of business logic `CRM/Utils/RequestLimiter.php` locate at `tests/phpunit/CRM/Utils/RequestLimiterTest.php`
+
+### Test Class
+
+`tests/phpunit/CiviTest/CiviUnitTestCase.php`
+
+Usage: reference `tests/phpunit/CRM/Utils/TypeTest.php`
 
 ## Security
 - Always use parameterized queries
