@@ -5,9 +5,14 @@
 2. [Grid System](#grid-system)
 3. [Chinese Font Handling](#chinese-font-handling)
 4. [Naming Conventions](#naming-conventions)
-5. [Responsive Design](#responsive-design)
+5. [Responsive Design (Mobile First)](#responsive-design)
+   - Mobile First Principle (MANDATORY)
+   - Standard Breakpoints
+   - Media Query Patterns
 6. [Common Patterns](#common-patterns)
 7. [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
+   - Desktop First (max-width)
+   - Custom Breakpoints
 
 ## CSS Variables
 
@@ -254,37 +259,207 @@ Follow CiviCRM conventions:
   .crm-accordion-wrapper
   ```
 
-## Responsive Design
+## CSS Selector Scoping
 
-### Media Query Pattern
+### The `.crm-container` Requirement
+
+**IMPORTANT**: All CiviCRM-specific CSS selectors must be prefixed with `.crm-container` to ensure proper style isolation.
+
+#### Why `.crm-container` is Required
+
+CiviCRM uses `.crm-container` as a style isolation container for two critical reasons:
+
+1. **Prevent polluting host websites**: CiviCRM is often embedded in various CMS platforms (WordPress, Drupal, Joomla, etc.)
+2. **Protect from external styles**: Prevents CiviCRM styles from being overridden by host website CSS
+
+#### Correct Selector Patterns
 
 ```css
-/* Mobile-first approach */
+/* ❌ WRONG - Pollutes global scope, can be overridden by external CSS */
+.crm-submit-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ✅ CORRECT - Properly scoped to CiviCRM container */
+.crm-container .crm-submit-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ✅ CORRECT - Using :has() selector for body-level styles */
+body:has(.crm-container) {
+  font-family: sans-serif;
+  line-height: 1.5;
+  background: #f5f5f5;
+}
+```
+
+#### When to Use `:has()` Selector
+
+For styles that must apply to `<body>` or other parent elements, use `:has(.crm-container)`:
+
+```css
+/* ✅ CORRECT - Only affects pages with CRM content */
+body:has(.crm-container) {
+  /* Global page styles when CRM is present */
+}
+
+/* ❌ WRONG - Affects ALL pages on host website */
+body {
+  /* This will pollute non-CRM pages */
+}
+```
+
+**Why this matters**:
+- CiviCRM is often embedded in other websites
+- Without `:has()`, styles would affect the host website's all pages
+- Using `:has(.crm-container)` ensures styles only apply when CRM content is present
+
+#### Best Practices
+
+1. **Always prefix with `.crm-container`** for CiviCRM-specific components
+2. **Use `:has(.crm-container)`** for body/html-level styles
+3. **Test in embedded contexts** to ensure no style leakage
+4. **Avoid bare class selectors** that might conflict with host sites
+
+## Responsive Design
+
+### Mobile First Principle (Recommended)
+
+**netiCRM recommends a mobile-first approach.** This means:
+
+1. **Default styles target mobile devices** (smallest screens)
+2. **Media queries use `min-width`** to progressively enhance for larger screens
+3. **Avoid using `max-width`** media queries (desktop-first anti-pattern)
+
+**Why mobile first?**
+- Mobile traffic is significant in Taiwan and globally
+- Better performance (mobile devices load less CSS)
+- Progressive enhancement vs graceful degradation
+- Easier to maintain and debug
+
+### Standard Breakpoints (Recommended)
+
+**Recommendation**: Use netiCRM grid system breakpoints. Avoid creating custom breakpoints.
+
+```css
+/* netiCRM Grid System Breakpoints */
+--ncg-breakpoint-sm: 576px   /* Small devices (landscape phones) */
+--ncg-breakpoint-md: 768px   /* Medium devices (tablets) */
+--ncg-breakpoint-lg: 992px   /* Large devices (desktops) */
+--ncg-breakpoint-xl: 1200px  /* Extra large devices */
+--ncg-breakpoint-xxl: 1400px /* Extra extra large devices */
+```
+
+### Mobile First Media Query Pattern
+
+```css
+/* ✅ CORRECT - Mobile first with min-width */
 .element {
-  /* Mobile styles (default) */
+  /* Mobile styles (default, <576px) */
   width: 100%;
+  padding: 1rem;
+  font-size: 14px;
 }
 
 @media (min-width: 768px) {
+  /* Tablet and up (≥768px) */
   .element {
-    /* Tablet styles */
     width: 50%;
+    padding: 1.5rem;
+    font-size: 16px;
   }
 }
 
 @media (min-width: 992px) {
+  /* Desktop and up (≥992px) */
   .element {
-    /* Desktop styles */
     width: 33.333%;
+    padding: 2rem;
+    font-size: 18px;
   }
 }
 ```
 
-### Use CSS Variables for Breakpoints
+### Using CSS Variables for Breakpoints (Recommended)
+
+Recommended: Use CSS variables for consistency and maintainability:
 
 ```css
+/* ✅ DO - Use CSS variables */
+@media (min-width: var(--ncg-breakpoint-sm)) {
+  /* Small devices and up */
+}
+
 @media (min-width: var(--ncg-breakpoint-md)) {
-  /* Tablet and up */
+  /* Tablets and up */
+}
+
+@media (min-width: var(--ncg-breakpoint-lg)) {
+  /* Desktops and up */
+}
+
+/* ❌ DON'T - Hardcoded values */
+@media (min-width: 768px) { }
+@media (min-width: 992px) { }
+```
+
+### Complete Responsive Example
+
+```css
+/* Mobile first: start with mobile styles */
+.card {
+  /* Mobile (default, all devices) */
+  width: 100%;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 14px;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Small devices and up (≥576px) */
+@media (min-width: var(--ncg-breakpoint-sm)) {
+  .card {
+    padding: 1.25rem;
+  }
+}
+
+/* Tablets and up (≥768px) */
+@media (min-width: var(--ncg-breakpoint-md)) {
+  .card {
+    width: 48%;
+    padding: 1.5rem;
+    font-size: 15px;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* Desktops and up (≥992px) */
+@media (min-width: var(--ncg-breakpoint-lg)) {
+  .card {
+    width: 31%;
+    padding: 2rem;
+    font-size: 16px;
+  }
+
+  .card-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* Extra large screens (≥1200px) */
+@media (min-width: var(--ncg-breakpoint-xl)) {
+  .card {
+    width: 23%;
+  }
 }
 ```
 
@@ -454,11 +629,78 @@ body {
 ### ❌ Pixel-based Media Queries
 
 ```css
-/* DON'T */
+/* DON'T - Hardcoded breakpoints */
 @media (min-width: 800px) { }
+@media (min-width: 1024px) { }
 
-/* DO - Use standard breakpoints */
+/* DO - Use netiCRM grid system variables */
 @media (min-width: var(--ncg-breakpoint-md)) { }
+@media (min-width: var(--ncg-breakpoint-lg)) { }
+```
+
+### ❌ Desktop First (max-width)
+
+```css
+/* DON'T - Desktop first approach with max-width */
+.element {
+  /* Desktop styles (default) */
+  width: 33.333%;
+  padding: 2rem;
+  font-size: 18px;
+}
+
+@media (max-width: 991px) {
+  .element {
+    width: 50%;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .element {
+    width: 100%;
+    padding: 1rem;
+    font-size: 14px;
+  }
+}
+
+/* DO - Mobile first with min-width */
+.element {
+  /* Mobile styles (default) */
+  width: 100%;
+  padding: 1rem;
+  font-size: 14px;
+}
+
+@media (min-width: var(--ncg-breakpoint-md)) {
+  .element {
+    width: 50%;
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: var(--ncg-breakpoint-lg)) {
+  .element {
+    width: 33.333%;
+    padding: 2rem;
+    font-size: 18px;
+  }
+}
+```
+
+### ❌ Custom Breakpoints
+
+```css
+/* DON'T - Creating custom breakpoints */
+@media (min-width: 650px) { }
+@media (min-width: 900px) { }
+@media (min-width: 1100px) { }
+
+/* DO - Use only netiCRM grid system breakpoints */
+@media (min-width: var(--ncg-breakpoint-sm)) { }  /* 576px */
+@media (min-width: var(--ncg-breakpoint-md)) { }  /* 768px */
+@media (min-width: var(--ncg-breakpoint-lg)) { }  /* 992px */
+@media (min-width: var(--ncg-breakpoint-xl)) { }  /* 1200px */
 ```
 
 ## Performance Considerations

@@ -15,6 +15,7 @@ This skill provides project-specific frontend development standards for netiCRM/
 
 ### CSS
 - **Standards**: See [css-standards.md](references/css-standards.md)
+- **Browser Support**: See [browser-support-policy.md](references/browser-support-policy.md)
 
 ### JavaScript
 - **Patterns**: See [javascript-patterns.md](references/javascript-patterns.md)
@@ -36,10 +37,15 @@ This skill provides project-specific frontend development standards for netiCRM/
 ## Development Workflow
 
 1. **Check References First**: Before writing code, review the relevant reference file
-2. **Follow Patterns**: Look for similar existing code in the project
-3. **Use CSS Variables**: Always use defined CSS variables for colors and dimensions
-4. **Test Responsively**: Verify code works across breakpoints (`ncg-*` grid)
-5. **Validate Translations**: Ensure all user-facing text uses `{ts}` or `ts()`
+2. **Check Browser Support (MANDATORY for CSS)**: Before using any new or uncommon CSS technology, **you MUST consult [browser-support-policy.md](references/browser-support-policy.md)** to verify compatibility with the company's browser support policy. This includes:
+   - Any CSS technology that appears "new," "experimental," or "uncommon"
+   - Any technique using `::` pseudo-elements or `@` rules (except basic @media)
+   - Technologies containing keywords like `scroll-`, `container-`, `@layer`, `@property`, etc.
+   - **You MUST perform a WebSearch or WebFetch** to check current browser support - do NOT rely solely on your knowledge cutoff
+3. **Follow Patterns**: Look for similar existing code in the project
+4. **Use CSS Variables**: Always use defined CSS variables for colors and dimensions
+5. **Test Responsively**: Verify code works across breakpoints (`ncg-*` grid)
+6. **Validate Translations**: Ensure all user-facing text uses `{ts}` or `ts()`
 
 ## Getting Started
 
