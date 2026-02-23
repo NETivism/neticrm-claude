@@ -1,6 +1,6 @@
 ---
 name: neticrm-frontend
-description: "netiCRM/CiviCRM frontend development standards and patterns for HTML, CSS, JavaScript, and Smarty templates. Use this skill when working with frontend code in the netiCRM project to ensure code quality, maintainability, and consistency with project conventions. Apply this skill when writing, modifying, inspecting, reviewing, analyzing, or assessing code quality."
+description: "netiCRM/CiviCRM frontend development standards and patterns for HTML, CSS, JavaScript, and Smarty templates. Use when editing .tpl/.css/.js files, fixing CSS layout or responsiveness issues, writing jQuery code, implementing Smarty template logic, checking browser compatibility, or reviewing frontend code quality. Ensures code consistency and avoids anti-patterns specific to this project."
 ---
 
 # netiCRM Frontend Development
