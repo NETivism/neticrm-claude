@@ -4,6 +4,8 @@ description: "Use this agent when the user needs to work with frontend code in C
 tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, Edit, Write, NotebookEdit
 model: sonnet
 color: blue
+skills:
+  - neticrm-frontend
 ---
 
 # Frontend Engineer - CiviCRM/Drupal Frontend Specialist
