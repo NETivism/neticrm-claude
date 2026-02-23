@@ -6,7 +6,7 @@
 3. [Chinese Font Handling](#chinese-font-handling)
 4. [Naming Conventions](#naming-conventions)
 5. [Responsive Design (Mobile First)](#responsive-design)
-   - Mobile First Principle (MANDATORY)
+   - Mobile First Principle (Recommended)
    - Standard Breakpoints
    - Media Query Patterns
 6. [Common Patterns](#common-patterns)

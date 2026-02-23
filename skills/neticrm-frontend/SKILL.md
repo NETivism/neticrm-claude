@@ -47,10 +47,72 @@ This skill provides project-specific frontend development standards for netiCRM/
 5. **Test Responsively**: Verify code works across breakpoints (`ncg-*` grid)
 6. **Validate Translations**: Ensure all user-facing text uses `{ts}` or `ts()`
 
-## Getting Started
+## Examples
 
-For detailed information on any topic:
-1. Identify which area you're working on (CSS/JS/Smarty/HTML)
-2. Read the corresponding reference file
-3. Follow the patterns and examples provided
-4. Avoid the documented anti-patterns
+### Example 1: CSS — Fix mobile layout on a form
+
+User says: "The contribution form looks broken on mobile"
+
+Actions:
+1. Read `references/css-standards.md` — Responsive Design and Grid System sections
+2. Replace any `max-width` media queries with mobile-first `min-width`
+3. Use `ncg-row` / `ncg-col-*` classes instead of custom flex/grid
+4. Scope all selectors under `.crm-container`
+5. Replace hardcoded colors with CSS variables (`--color-*`, `--rfm-*`)
+
+Result: Responsive layout that follows netiCRM standards and won't leak styles to the host site
+
+---
+
+### Example 2: jQuery + JS — Add event handler for dynamic elements
+
+User says: "Add a handler when user changes the payment method select"
+
+Actions:
+1. Read `references/javascript-patterns.md` — jQuery Usage and Event Handling sections
+2. Use event delegation `cj(document).on('change', '#selector', fn)` — never bind directly to dynamic elements
+3. Wrap code in `(function($) { 'use strict'; ... })(cj)` closure
+4. If fetching CiviCRM data, use `.crmAPI()` with both `success` and `error` callbacks
+
+Result: Correct jQuery pattern that avoids `$` conflicts and works with dynamically rendered markup
+
+---
+
+### Example 3: Smarty — Display translated text with dynamic values and a CRM link
+
+User says: "Show a help message with the contact's name and a link to their profile"
+
+Actions:
+1. Read `references/smarty-templates.md` — Translation System, Security, and `{crmURL}` sections
+2. Use `{ts 1=$var}text %1{/ts}` for parameterized strings — never interpolate variables inside `{ts}`
+3. Escape user-supplied output: `{$var|escape}`
+4. Generate URLs with `{crmURL p='...' q='...'}` — never hardcode paths
+5. If adding inline JS, wrap in `{literal}` and use `{ts escape='js'}` for translated strings
+
+Result: Properly translated, escaped, and CMS-portable template
+
+## Common Issues
+
+### CSS styles leaking to the host website
+Cause: Selectors written without `.crm-container` prefix
+Solution: Prefix all CiviCRM-specific selectors with `.crm-container`; use `body:has(.crm-container)` for body-level styles. See `references/css-standards.md` — CSS Selector Scoping section.
+
+### Layout breaks on mobile
+Cause: Desktop-first `max-width` media queries, or custom breakpoints instead of `ncg-*` variables
+Solution: Rewrite using mobile-first `min-width` with `--ncg-breakpoint-*` variables; use `ncg-row` / `ncg-col-*` grid classes. See `references/css-standards.md` — Responsive Design section.
+
+### jQuery `$` is not defined / conflict with other libraries
+Cause: Using `$` directly instead of `cj()` outside a closure
+Solution: Use `cj()` at the top level; pass `$` as a parameter inside `(function($) { ... })(cj)` or `cj(document).ready(function($) { ... })`. See `references/javascript-patterns.md` — jQuery Usage section.
+
+### Event handler not firing on dynamically added elements
+Cause: Binding events directly to elements that don't exist at DOM-ready time
+Solution: Use event delegation — `cj(document).on('event', '.selector', fn)`. See `references/javascript-patterns.md` — Event Handling section.
+
+### Smarty parse error with JavaScript `{ }` braces
+Cause: Smarty interprets `{` and `}` inside `<script>` blocks
+Solution: Wrap all inline JavaScript in `{literal}...{/literal}`. See `references/smarty-templates.md` — Asset Loading section.
+
+### Translated string breaks JavaScript
+Cause: `{ts}` output in JS context without escaping quotes
+Solution: Always use `{ts escape='js'}` inside JavaScript strings. See `references/smarty-templates.md` — Translation System section.
