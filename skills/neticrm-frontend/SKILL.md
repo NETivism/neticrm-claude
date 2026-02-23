@@ -1,6 +1,6 @@
 ---
 name: neticrm-frontend
-description: "netiCRM/CiviCRM frontend development standards and patterns for HTML, CSS, JavaScript, and Smarty templates. Use when editing .tpl/.css/.js files, fixing CSS layout or responsiveness issues, writing jQuery code, implementing Smarty template logic, checking browser compatibility, or reviewing frontend code quality. Ensures code consistency and avoids anti-patterns specific to this project."
+description: "netiCRM/CiviCRM frontend standards for HTML, CSS, JavaScript, and Smarty templates. Use when editing .tpl/.css/.js files, fixing CSS layout or responsiveness, writing jQuery code, implementing Smarty logic, or checking browser compatibility. Ensures code consistency and avoids project-specific anti-patterns."
 ---
 
 # netiCRM Frontend Development

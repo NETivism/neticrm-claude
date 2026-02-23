@@ -1,6 +1,6 @@
 ---
 name: neticrm-backend
-description: "netiCRM/CiviCRM PHP backend development standards and patterns for BAO, DAO, Form, and API classes. Use when writing or modifying PHP files in /CRM/, implementing business logic in BAO classes, creating or fixing CiviCRM Form handlers, implementing API v3 endpoints, defining routes in Menu XML, checking permissions, or reviewing PHP code quality. Ensures code follows CiviCRM class hierarchy, naming conventions, security practices, and project-specific patterns."
+description: "netiCRM/CiviCRM PHP backend standards for BAO, DAO, Form, and API classes. Use when writing PHP in /CRM/, implementing BAO business logic, Form handlers, API v3 endpoints, Menu XML routes, or checking permissions. Ensures CiviCRM class hierarchy, naming conventions, and security practices."
 ---
 
 # netiCRM Backend Development
