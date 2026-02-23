@@ -2,12 +2,13 @@
 
 ## Table of Contents
 1. [jQuery Usage](#jquery-usage)
-2. [CiviCRM API Patterns](#civicrm-api-patterns)
-3. [Event Handling](#event-handling)
-4. [Plugin Development](#plugin-development)
-5. [Common Utilities](#common-utilities)
-6. [Code Style](#code-style)
-7. [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
+2. [Native JS Usage](#native-js-usage)
+3. [CiviCRM API Patterns](#civicrm-api-patterns)
+4. [Event Handling](#event-handling)
+5. [Plugin Development](#plugin-development)
+6. [Common Utilities](#common-utilities)
+7. [Code Style](#code-style)
+8. [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
 
 ## jQuery Usage
 
@@ -56,6 +57,173 @@ cj(document).ready(function($) {
 ### jQuery Version
 
 CiviCRM bundles jQuery. Check version compatibility when using newer jQuery features.
+
+## Native JS Usage
+
+### When to Use Native JS vs jQuery
+
+jQuery (`cj()`) is the primary tool for DOM work. Choose native JS when:
+
+| Situation | Recommendation |
+|-----------|----------------|
+| DOM selection, manipulation, event binding | jQuery (`cj()`) |
+| Modern browser APIs (fetch, MutationObserver) | Native JS |
+| Utility functions that don't touch the DOM | Native JS |
+| ES6+ syntax (const, arrow functions, etc.) | Use anywhere alongside jQuery |
+| New standalone modules with no jQuery dependency | Native JS |
+
+### ES6+ Syntax
+
+ES6+ syntax can be used in any JS file alongside jQuery — these are syntax improvements, not a separate approach.
+
+**`const` and `let` instead of `var`:**
+
+```javascript
+// const for values that won't be reassigned
+const contactId = cj('#contact-id').val();
+
+// let when reassignment is needed
+let retryCount = 0;
+```
+
+**Arrow functions:**
+
+```javascript
+// Good for callbacks where 'this' context is irrelevant
+cj('.items').each((index, element) => {
+  cj(element).addClass('active');
+});
+
+// Use regular functions when 'this' refers to the DOM element
+cj('.items').each(function() {
+  cj(this).addClass('active'); // 'this' is the element
+});
+```
+
+**Template literals:**
+
+```javascript
+const name = 'John';
+const message = `Hello ${name}, you have ${count} messages.`;
+cj('#notice').text(message);
+```
+
+**Destructuring:**
+
+```javascript
+// Object destructuring
+const { display_name, email } = contact;
+
+// Array destructuring
+const [first, ...rest] = items;
+```
+
+**Promise / async-await:**
+
+```javascript
+async function loadContact(id) {
+  try {
+    const data = await fetchContact(id);
+    cj('#contact-name').text(data.display_name);
+  } catch (error) {
+    console.error('Load failed:', error);
+  }
+}
+```
+
+### Modern DOM API
+
+Use native DOM API for standalone utilities or when operating outside jQuery context:
+
+```javascript
+// querySelector - equivalent to cj('selector')[0]
+const element = document.querySelector('#my-id');
+const elements = document.querySelectorAll('.my-class');
+
+// classList - equivalent to jQuery addClass/removeClass
+element.classList.add('active');
+element.classList.remove('inactive');
+element.classList.toggle('expanded');
+element.classList.contains('active'); // returns boolean
+
+// dataset - read data-* attributes
+// <div data-contact-id="123">
+const contactId = element.dataset.contactId; // '123'
+```
+
+### Fetch API
+
+Use `fetch` for new standalone modules that don't rely on CiviCRM's `.crmAPI()`.
+For CiviCRM API calls, always use `.crmAPI()` — not fetch.
+
+```javascript
+async function postData(url, params) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Fetch failed:', error);
+  }
+}
+```
+
+### MutationObserver
+
+jQuery has no equivalent. Use `MutationObserver` to react to DOM changes added by other scripts:
+
+```javascript
+// Watch for dynamically added elements
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    mutation.addedNodes.forEach((node) => {
+      if (node.nodeType === 1 && node.matches('.crm-container')) {
+        // Safely hand off newly added elements back to jQuery
+        cj(node).find('.my-class').doSomething();
+      }
+    });
+  });
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Stop observing when done
+observer.disconnect();
+```
+
+### Coexisting with jQuery
+
+When a file uses both jQuery and native JS, keep each tool in a clearly purposeful role:
+
+```javascript
+(function($) {
+  'use strict';
+
+  // jQuery for DOM interaction (its strength)
+  $(document).on('click', '.crm-button', function() {
+    const contactId = $(this).data('contact-id');
+    loadContact(contactId);
+  });
+
+  // Native JS async function — not a jQuery concern
+  async function loadContact(id) {
+    const data = await fetch(`/civicrm/ajax/contact?id=${id}`)
+      .then(r => r.json());
+    $('#contact-name').text(data.display_name);
+  }
+
+})(cj);
+```
+
+Each tool handles what it does best, within clearly separated logical units.
 
 ## CiviCRM API Patterns
 
@@ -521,19 +689,23 @@ cj('#my-form').submit(function(e) {
 });
 ```
 
-### ❌ Mixing jQuery and Vanilla JS
+### ❌ Mixing jQuery and Vanilla JS in the Same Operation
+
+The anti-pattern is mixing both approaches **within a single operation**: selecting with native JS then passing to `cj()`, or vice versa. This creates inconsistency and confusion.
 
 ```javascript
-// DON'T - Inconsistent approach
+// DON'T - Select with native JS, then hand off to jQuery
 var element = document.getElementById('my-id');
-cj(element).addClass('active');
-element.innerHTML = 'New content';
+cj(element).addClass('active');  // Why wrap it now?
+element.innerHTML = 'New content'; // Switching back to native
 
-// DO - Choose one approach
+// DO - Pick one approach and stay consistent for that operation
 var $element = cj('#my-id');
 $element.addClass('active');
 $element.html('New content');
 ```
+
+**However**, using native JS for a different purpose in the same file is fine. The rule is about **consistency within a logical unit**, not about banning native JS from jQuery files entirely. See [Native JS Usage](#native-js-usage) for when to choose each approach.
 
 ## Performance Best Practices
 
