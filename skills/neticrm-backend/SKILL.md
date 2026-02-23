@@ -49,3 +49,4 @@ CRM_Contribute_Form_Contribution → /CRM/Contribute/Form/Contribution.php
 - **PHP Patterns**: See [php-patterns.md](references/php-patterns.md) — BAO/Form class structure, routing, permissions, translations, common utilities, testing, security
 - **API v3 Patterns**: See [api-v3-patterns.md](references/api-v3-patterns.md) — file structure, CRUD helpers, spec functions, custom actions, return values, internal API calls
 - **Hook System**: See [hook-system.md](references/hook-system.md) — form hooks, data hooks (pre/post), CRM_Utils_Hook methods, real module examples
+- **Database Schema**: See [database-schema.md](references/database-schema.md) — XML schema structure, field types/attributes, naming conventions, index/FK patterns, path lookup

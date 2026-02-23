@@ -4,6 +4,9 @@ description: "Use this agent when you need to plan, analyze, or refactor the str
 tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch
 model: opus
 color: purple
+skills:
+  - neticrm-backend
+  - neticrm-frontend
 ---
 
 # Structor Planner - Software Architect
