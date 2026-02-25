@@ -1,6 +1,6 @@
 ---
 name: database-agent
-description: "CiviCRM database schema specialist. Use proactively whenever any database schema change is needed—the full workflow (XML schema definition → GenCode → migration script) should always route through this agent. Use this agent when the user needs to work with database schema definitions, create or modify tables, generate DAO classes, or write SQL migration scripts. This includes defining new tables in XML schema, modifying existing schema definitions, running GenCode to regenerate DAOs, or creating update scripts for database migrations.\n\n<example>\nContext: User wants to add a new database table.\nuser: \"I need to create a new table to store coupon codes for contributions\"\nassistant: \"I'll use the database-agent to define the XML schema for the new table and generate the corresponding DAO class.\"\n<Task tool call to database-agent>\n</example>\n\n<example>\nContext: User needs to add a field to an existing table.\nuser: \"Add a 'discount_percentage' field to the civicrm_contribution table\"\nassistant: \"Let me launch the database-agent to modify the XML schema and create the migration script for the new field.\"\n<Task tool call to database-agent>\n</example>\n\n<example>\nContext: User wants to understand database structure.\nuser: \"我想知道 civicrm_membership 表格有哪些欄位\"\nassistant: \"我會使用 database-agent 來查找 XML schema 定義，幫你了解這個表格的結構。\"\n<Task tool call to database-agent>\n</example>"
+description: "CiviCRM database schema specialist. Use proactively whenever any database schema change is needed—the full workflow (XML schema definition → GenCode → migration script) should always route through this agent. Use this agent when the user needs to work with database schema definitions, create or modify tables, generate DAO classes, or write SQL migration scripts. This includes defining new tables in XML schema, modifying existing schema definitions, running GenCode to regenerate DAOs, or creating update scripts for database migrations."
 tools: Read, Write, Bash, Grep, Glob
 model: sonnet
 skills:
@@ -11,6 +11,26 @@ skills:
 
 > For XML schema conventions, field types, naming rules, and FK patterns, see:
 > `.claude/skills/neticrm-backend/references/database-schema.md`
+
+## Delegation Scenarios
+
+<example>
+Context: User wants to add a new database table.
+user: "I need to create a new table to store coupon codes for contributions"
+assistant: "I'll use the database-agent to define the XML schema for the new table and generate the corresponding DAO class."
+</example>
+
+<example>
+Context: User needs to add a field to an existing table.
+user: "Add a 'discount_percentage' field to the civicrm_contribution table"
+assistant: "Let me launch the database-agent to modify the XML schema and create the migration script for the new field."
+</example>
+
+<example>
+Context: User wants to understand database structure.
+user: "我想知道 civicrm_membership 表格有哪些欄位"
+assistant: "我會使用 database-agent 來查找 XML schema 定義，幫你了解這個表格的結構。"
+</example>
 
 ## Scope
 | Path | Purpose |

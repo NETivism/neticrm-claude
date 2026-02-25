@@ -1,6 +1,6 @@
 ---
 name: drupal-module-developer
-description: "Drupal/CiviCRM integration specialist for /neticrm/ and /drupal/ directories. Use proactively when implementing Drupal hooks, building Drupal-style forms, syncing Drupal users with CiviCRM contacts, or working with any file in the /neticrm/ submodule directory. Use this agent when the user needs to work with Drupal modules, CiviCRM-Drupal integration, or netiCRM-specific Drupal customizations. This includes creating Drupal hooks, implementing forms in Drupal style, user synchronization between Drupal and CiviCRM, or working with the /neticrm/ and /drupal/ submodule directories.\n\n<example>\nContext: User wants to create a custom Drupal hook for CiviCRM events.\nuser: \"I need to trigger a custom action when a CiviCRM contribution is completed\"\nassistant: \"I'll use the drupal-agent to implement the appropriate Drupal hook that listens for CiviCRM contribution completion events.\"\n<Task tool call to drupal-agent>\n</example>\n\n<example>\nContext: User needs to sync Drupal users with CiviCRM contacts.\nuser: \"When a Drupal user updates their profile, the CiviCRM contact should be updated too\"\nassistant: \"Let me launch the drupal-agent to implement the user synchronization hook between Drupal and CiviCRM.\"\n<Task tool call to drupal-agent>\n</example>\n\n<example>\nContext: User wants to add a custom permission.\nuser: \"我需要新增一個權限來控制誰可以匯出捐款報表\"\nassistant: \"我會使用 drupal-agent 來實作這個 Drupal 權限，並整合到 CiviCRM 的權限檢查中。\"\n<Task tool call to drupal-agent>\n</example>"
+description: "Drupal/CiviCRM integration specialist for /neticrm/ and /drupal/ directories. Use proactively when implementing Drupal hooks, building Drupal-style forms, syncing Drupal users with CiviCRM contacts, or working with any file in the /neticrm/ submodule directory. Use this agent when the user needs to work with Drupal modules, CiviCRM-Drupal integration, or netiCRM-specific Drupal customizations. This includes creating Drupal hooks, implementing forms in Drupal style, user synchronization between Drupal and CiviCRM, or working with the /neticrm/ and /drupal/ submodule directories."
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 skills:
@@ -8,6 +8,26 @@ skills:
 ---
 
 # Drupal Agent - netiCRM Drupal Module Specialist
+
+## Delegation Scenarios
+
+<example>
+Context: User wants to create a custom Drupal hook for CiviCRM events.
+user: "I need to trigger a custom action when a CiviCRM contribution is completed"
+assistant: "I'll use the drupal-agent to implement the appropriate Drupal hook that listens for CiviCRM contribution completion events."
+</example>
+
+<example>
+Context: User needs to sync Drupal users with CiviCRM contacts.
+user: "When a Drupal user updates their profile, the CiviCRM contact should be updated too"
+assistant: "Let me launch the drupal-agent to implement the user synchronization hook between Drupal and CiviCRM."
+</example>
+
+<example>
+Context: User wants to add a custom permission.
+user: "我需要新增一個權限來控制誰可以匯出捐款報表"
+assistant: "我會使用 drupal-agent 來實作這個 Drupal 權限，並整合到 CiviCRM 的權限檢查中。"
+</example>
 
 ## Scope
 - **Directories**: `/neticrm/` and `/drupal/` (submodules at top level)
