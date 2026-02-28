@@ -28,12 +28,15 @@ CRM_Contribute_Form_Contribution → /CRM/Contribute/Form/Contribution.php
 | Form | `/CRM/**/Form/` | Form handling: `preProcess()` → `buildForm()` → `postProcess()` |
 | API | `/api/v3/` | External API endpoints |
 
-### Code Style
+### Code Style (summary — see [php-coding-style.md](references/php-coding-style.md) for full rules)
 - **Indentation**: 2 spaces
 - **Class names**: CamelCase (`CRM_Contribute_BAO_Contribution`)
 - **Methods**: camelCase (`processContribution()`)
-- **Properties**: `_camelCase` (underscore prefix for Form/Page instances)
+- **Properties**: `_camelCase` (underscore prefix)
 - **Comparisons**: `===` and `!==`
+- **Constants**: `TRUE`, `FALSE`, `NULL` — uppercase
+- **Arrays**: short syntax `[]` always
+- **Braces**: opening brace same line; `else`/`elseif`/`catch` on next line after `}`
 - **PHP Version**: 7.3+ compatible
 
 ## Development Workflow
@@ -50,3 +53,4 @@ CRM_Contribute_Form_Contribution → /CRM/Contribute/Form/Contribution.php
 - **API v3 Patterns**: See [api-v3-patterns.md](references/api-v3-patterns.md) — file structure, CRUD helpers, spec functions, custom actions, return values, internal API calls
 - **Hook System**: See [hook-system.md](references/hook-system.md) — form hooks, data hooks (pre/post), CRM_Utils_Hook methods, real module examples
 - **Database Schema**: See [database-schema.md](references/database-schema.md) — XML schema structure, field types/attributes, naming conventions, index/FK patterns, path lookup
+- **PHP Coding Style**: See [php-coding-style.md](references/php-coding-style.md) — full PSR1/PSR2/PSR12 rules, brace position, constant case, array syntax, operator spacing, php-cs-fixer usage
