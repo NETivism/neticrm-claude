@@ -67,9 +67,6 @@ Defined in `CRM_Core_Permission::basicPermissions()` and `CRM/*/Info.php::getPer
 - Check: `CRM_Core_Permission::check('permission string')`
 
 ## Specialized Agents
-Use these agents for detailed guidance:
-- **php-engineer** - PHP, BAO/DAO, API development
-- **frontend-engineer** - JS, CSS, Smarty templates
-- **database-agent** - Schema, migrations, update scripts
+Use these agent when job needed
 - **drupal-module-developer** - Drupal integration
-- **structor-planner** - Architecture planning
+- **structure-planner** - Architecture planning
