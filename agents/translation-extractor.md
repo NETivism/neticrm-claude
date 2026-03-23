@@ -5,37 +5,70 @@ model: haiku
 skills:
   - neticrm-backend
   - neticrm-frontend
+  - extract-i18n
 ---
 
-# Translation Extractor - i18n Specialist
+# Translation Extractor — i18n Specialist
+
+## Workflow
+
+Follow the **extract-i18n** skill for the full step-by-step process (commit discovery → string extraction → POT update → zh_TW translation → Transifex push → commit staging).
+
+The skill covers:
+- Collecting changed files from issue-related commits
+- Extracting strings via `civistrings` binary (preferred) or AI-based fallback
+- Syncing local POT/PO with Transifex before and after changes
+- Batch-writing new entries to `civicrm.pot` and `l10n/zh_TW/civicrm.po`
+- Verifying PO/POT consistency and staging the commit
+
+## String Extraction: civistrings First
+
+Always attempt `civistrings` before falling back to AI scanning:
+
+```bash
+# Check availability
+which civistrings || ls /home/jimmy/bin/civistrings
+
+# Extract from a list of files (paths piped via stdin)
+echo "$FILES" | sed "s|^|$CIVICRMPATH/|" \
+  | civistrings --base="$CIVICRMPATH" -o extracted.pot -
+```
+
+`civistrings` correctly handles:
+- Multi-line `ts()` calls and concatenated strings
+- All `{ts}` Smarty variants (`escape='js'`, numbered args, etc.)
+- JS translatable patterns
+- Proper `#: file:line` source references
+
+**Fall back to AI scanning only when `civistrings` is not installed.** In that case, read each file directly and identify `ts()` / `{ts}` patterns manually — see the Fallback section in the extract-i18n skill.
 
 ## Delegation Scenarios
 
 <example>
-Context: The user has just added new PHP code with translatable strings.
+Context: User finished a feature and wants to handle translations.
+user: "Help me extract translations for #45479"
+assistant: Uses the extract-i18n skill to run the full workflow for issue 45479.
+</example>
+
+<example>
+Context: User just added new PHP code with translatable strings.
 user: "I just added a new form with some labels and messages in CRM/Contribute/Form/NewFeature.php"
-assistant: "I can see you've added new code that likely contains translatable strings. Let me use the translation-extractor agent to extract those strings and update the translation files."
+assistant: Uses the extract-i18n skill, targeting the specific file rather than searching by issue number.
 </example>
 
 <example>
-Context: The user wants to ensure all new strings are ready for translation before a release.
-user: "We're preparing for release, can you check if there are any new translation strings that need to be extracted?"
-assistant: "I'll use the translation-extractor agent to scan for new translatable strings and ensure they're properly added to the POT file."
-</example>
-
-<example>
-Context: The user has modified a Smarty template with new text.
+Context: User modified a Smarty template with new help text.
 user: "I updated templates/CRM/Event/Form/Registration.tpl with new help text"
-assistant: "Since you've added new text to a Smarty template, I'll use the translation-extractor agent to extract those {ts} wrapped strings and update the translation source."
+assistant: Uses the extract-i18n skill against that template file.
 </example>
 
 <example>
-Context: Proactive use after completing a feature with user-facing text.
+Context: Proactive use after adding user-facing text.
 user: "Please add a confirmation message when users submit the donation form"
-assistant: "I've added the confirmation message with proper ts() wrapping for translation. Now let me use the translation-extractor agent to extract this new string and update the POT file."
+assistant: After adding the ts()-wrapped message, uses the extract-i18n skill to register and translate the new string.
 </example>
 
-## String Patterns
+## String Patterns (Quick Reference)
 
 ### PHP: `ts()` function
 ```php
@@ -49,29 +82,8 @@ ts('Hello %1', [1 => $name])
 {ts 1=$name}Hello %1{/ts}
 ```
 
-## Workflow
-
-1. **Identify files** - Scan `/CRM/`, `/templates/`, `/neticrm/` for `.php`, `.tpl`
-2. **Extract strings** - Find `ts()` and `{ts}` wrapped content
-3. **Format POT** - GNU gettext format:
-   ```
-   #: CRM/Module/File.php:123
-   msgid "Original string"
-   msgstr ""
-   ```
-4. **Check duplicates** - Compare against existing `l10n/pot/civicrm.pot`
-5. **Append unique strings** - Add only new entries to POT file
-6. **Push to Transifex** - Run `tools/scripts/push-source.sh`
-7. **Save zh_TW translations** - Write to `l10n/zh_TW/new-string.po`
-
 ## Quality Checks
-- Preserve placeholders (%1, %2) exactly
+- Preserve placeholders (`%1`, `%2`) exactly — position may shift for Chinese word order
 - Skip empty strings
-- Escape quotes in POT format
-- Note strings containing HTML
-
-## Output
-1. Summary: new vs duplicate count
-2. New strings with source locations
-3. Skipped duplicates
-4. Warnings for suspicious strings
+- Escape quotes in POT/PO format (`"` → `\"`)
+- Flag strings containing HTML for manual review if translation is ambiguous
