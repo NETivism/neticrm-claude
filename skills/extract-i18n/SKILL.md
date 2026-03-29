@@ -138,7 +138,7 @@ Show the new string list to the user and confirm before writing.
 
 ## Step 5: Append New Strings to civicrm.pot
 
-Batch-write all new strings then push once — do not call `add-source-string.sh` per string (it pulls and pushes every time, which is slow for multiple strings).
+Batch-write all new strings — do not call `add-source-string.sh` per string (it pulls and pushes every time, which is slow for multiple strings). Do not push string now, strings will be reviewed by human later.
 
 ```bash
 for msgid in "${NEW_STRINGS[@]}"; do
@@ -159,16 +159,13 @@ done
 
 rm -f "$EXTRACTED_POT"
 
-echo ""
-echo "Pushing source to Transifex ..."
-cd "$CIVICRMPATH" && tx push -s
 ```
 
 ---
 
 ## Step 6: Translate and Write to zh_TW/civicrm.po
 
-Translate each new string into **Traditional Chinese (Taiwan style)** and batch-append to the PO file, then push once.
+Translate each new string into **Traditional Chinese (Taiwan style)** and batch-append to the PO file, then do not push string to remote, strings will be reviewed by human.
 
 ```bash
 PO_FILE="$CIVICRMPATH/l10n/zh_TW/civicrm.po"
@@ -183,8 +180,6 @@ for msgid in "${NEW_STRINGS[@]}"; do
 done
 
 echo ""
-echo "Pushing zh_TW translation to Transifex ..."
-cd "$CIVICRMPATH" && tx push -t -l zh_TW
 
 echo "Regenerating MO file ..."
 msgfmt "$PO_FILE" -o "$CIVICRMPATH/l10n/zh_TW/LC_MESSAGES/civicrm.mo"
