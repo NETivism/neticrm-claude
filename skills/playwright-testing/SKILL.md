@@ -49,13 +49,30 @@ Tests written by AI (Claude) must be placed in `tests/playwright/tests/specific/
 Rules for files in `specific/`:
 - Same structure and conventions as regular spec files (see [Test File Structure](#test-file-structure) below)
 - Import `utils.js` one level up: `require('../utils.js')`
-- After writing, register the new test in **both** `.github/workflows/ci.yml` and `.drone.yml` at the end of each Playwright block (see [Registering a New AI Test in CI](#registering-a-new-ai-test-in-ci) below)
+- **Do NOT register AI tests in CI by default** — only add them to `.github/workflows/ci.yml` and `.drone.yml` if the user explicitly requests it (see [Registering a New AI Test in CI](#registering-a-new-ai-test-in-ci) below)
 
 ---
 
 ## Running Tests
 
-From **within** the test environment (the server running netiCRM):
+First, determine whether netiCRM is running directly on the host or inside a Docker container.
+
+**Detecting the environment:**
+- If the developer's OS is **macOS or Windows**, netiCRM almost certainly runs inside a Docker container (Linux containers can't run natively on these OSes).
+- On **Linux**, it may be either native or Docker — check with `docker ps` to see if a netiCRM container is running.
+- You can also check for a `docker-compose.yml` or `.env` file at the project root for container names.
+
+**If running inside Docker**, prefix commands with `docker exec <container-name> bash -c "..."`:
+
+```bash
+# Find the container name first
+docker ps
+
+# Then run the test inside the container
+docker exec <container-name> bash -c "cd /path/to/civicrm/tests/playwright && npx playwright test tests/<your-file>.spec.js"
+```
+
+**If running natively on the host**:
 
 ```bash
 cd tests/playwright
@@ -67,8 +84,6 @@ To run all tests:
 ```bash
 npx playwright test
 ```
-
-> How to access the server environment (Docker, SSH, local) depends on the developer's machine setup and is intentionally not specified here.
 
 ---
 
@@ -110,7 +125,9 @@ Rules:
 
 ## Registering a New AI Test in CI
 
-After placing a new spec file under `tests/specific/`, add it to **both** CI config files at the end of every Playwright block.
+> **Default: do NOT add AI-generated tests to CI.** Only register a test in CI config files when the user explicitly asks for it.
+
+When the user requests CI registration, add the spec file to **both** CI config files at the end of every Playwright block.
 
 ### `.github/workflows/ci.yml`
 
