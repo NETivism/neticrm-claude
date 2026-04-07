@@ -13,14 +13,19 @@ End-to-end frontend testing for netiCRM using Playwright. Tests interact with th
 
 ---
 
-## When Unsure — Read Existing Tests First
+## REQUIRED: Read Existing Tests Before Writing
 
-Before writing a new test, browse `tests/playwright/tests/` and read the top section of relevant spec files (variable declarations, helper functions, and the setup test). Each file documents:
-- Which CiviCRM pages it visits
-- How it creates test data via the admin UI
-- Which form selectors it relies on
+**Before writing any new test, you MUST follow these steps — no exceptions:**
 
-Use existing files as templates. The patterns for inline contact creation, accordion handling, and date filtering are already proven there.
+1. **Read `references/test-index.md`** to find the most relevant existing test(s) for the feature being tested.
+2. **Read the full content of the matched spec file(s)** — not just the first few lines. Pay attention to:
+   - Variable declarations and shared state
+   - How test data is created via the admin UI
+   - Which selectors and helper functions are used
+   - The `beforeAll` / `afterAll` structure
+3. **Use the existing file as a template** — copy its structure, adapt its patterns. Do not invent new patterns if a proven one already exists.
+
+This step is mandatory. Skipping it produces tests that diverge from project conventions and are harder to maintain.
 
 ---
 
@@ -161,10 +166,21 @@ For `php83-d10` (Drupal 10, path `$DRUPAL_ROOT/modules/civicrm`):
 
 ---
 
+## Keeping test-index.md Up to Date
+
+`references/test-index.md` only lists tests that are **committed and actually running in CI**. AI-generated tests in `tests/specific/` are excluded until they are explicitly registered in CI.
+
+Update the index whenever:
+- A spec file already listed in the index has its first-line comment (`// ...`) updated — sync the description in the index to match
+- A test in `tests/specific/` is officially registered in both CI config files (`.github/workflows/ci.yml` and `.drone.yml`) and committed — add it to the appropriate category in the index
+
+---
+
 ## Reference Docs
 
 | Topic | File |
 |-------|------|
+| **All existing test files with descriptions (read this first)** | `references/test-index.md` |
 | Utility functions (`utils.js`), date picker, readonly bypass | `references/utilities.md` |
 | CiviCRM UI patterns (accordion, selectors, error checks, page title) | `references/civicrm-ui-patterns.md` |
 | Creating test data via admin UI, sort name, today's date | `references/test-data.md` |
