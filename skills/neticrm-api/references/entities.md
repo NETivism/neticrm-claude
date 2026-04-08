@@ -319,6 +319,30 @@ Response shape per value: `{ "entity_id": "1234", "id": "2", "latest": "value", 
 
 ## Common GetOptions Fields
 
+Request: `POST <entrypoint>?entity=<Entity>&action=getoptions` with body `{ "field": "<field_name>" }`
+
+Response shape — `values` is an **array** of `{ value, label }` objects (not a keyed map):
+```json
+{
+  "is_error": 0,
+  "version": 3,
+  "count": 3,
+  "values": [
+    { "value": 1, "label": "信用卡" },
+    { "value": 2, "label": "簽帳卡" },
+    { "value": 3, "label": "現金" }
+  ]
+}
+```
+
+To build a value→label lookup map:
+```js
+const map = {};
+(result.values || []).forEach(function(opt) {
+  map[String(opt.value)] = opt.label;
+});
+```
+
 For `entity=Contact`:
 - `contact_type` — Individual / Household / Organization
 - `prefix_id`, `suffix_id` — name prefix/suffix
