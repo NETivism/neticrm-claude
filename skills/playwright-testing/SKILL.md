@@ -181,6 +181,7 @@ Update the index whenever:
 | Topic | File |
 |-------|------|
 | **All existing test files with descriptions (read this first)** | `references/test-index.md` |
+| **CiviCRM/netiCRM Javascript API (crmAPI, AJAX, CSRF)** | `references/civicrm-js-api.md` |
 | Utility functions (`utils.js`), date picker, readonly bypass | `references/utilities.md` |
 | CiviCRM UI patterns (accordion, selectors, error checks, page title) | `references/civicrm-ui-patterns.md` |
 | Creating test data via admin UI, sort name, today's date | `references/test-data.md` |
