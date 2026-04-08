@@ -9,7 +9,9 @@ description: "netiCRM Playwright E2E testing standards. Use when writing, modify
 
 End-to-end frontend testing for netiCRM using Playwright. Tests interact with the full browser UI (CiviCRM + Drupal) as a logged-in admin user.
 
-**Key principle**: Tests must work without hardcoded environment details (base URL, Docker container names). All environment specifics are resolved via `setup.env` and the pre-authenticated `storageState.json`.
+**Key principles**:
+- Tests must work without hardcoded environment details (base URL, Docker container names). All environment specifics are resolved via `setup.env` and the pre-authenticated `storageState.json`.
+- **Prioritize using frontend UI** to create data and set up test scenarios. The JS API (`crmAPI`) should only be used as a last resort if UI-based creation is impossible. You MUST explain such cases to the user and obtain their approval before using the JS API.
 
 ---
 
@@ -18,12 +20,16 @@ End-to-end frontend testing for netiCRM using Playwright. Tests interact with th
 **Before writing any new test, you MUST follow these steps — no exceptions:**
 
 1. **Read `references/test-index.md`** to find the most relevant existing test(s) for the feature being tested.
+   - *Example*: If you need to create a contribution page, follow the patterns in `add_contribution_page.spec.js` (listed in the index).
 2. **Read the full content of the matched spec file(s)** — not just the first few lines. Pay attention to:
    - Variable declarations and shared state
    - How test data is created via the admin UI
    - Which selectors and helper functions are used
    - The `beforeAll` / `afterAll` structure
 3. **Use the existing file as a template** — copy its structure, adapt its patterns. Do not invent new patterns if a proven one already exists.
+4. **Consult the user** if:
+   - You believe the JS API is necessary for setup.
+   - The patterns in existing tests (like `add_contribution_page.spec.js`) are insufficient for your specific test case.
 
 This step is mandatory. Skipping it produces tests that diverge from project conventions and are harder to maintain.
 
