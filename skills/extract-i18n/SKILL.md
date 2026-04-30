@@ -1,32 +1,17 @@
 ---
 name: extract-i18n
-description: "CiviCRM i18n extraction and translation workflow. Find changed files from issue-related commits, extract new strings with civistrings, sync Transifex, and auto-translate to zh_TW (Taiwan). Use when the user says 'extract translations for #NNNNN' or '/extract-i18n NNNNN'."
+description: "CiviCRM i18n extraction and translation workflow. Reads git diff to extract new translatable strings via AI, shows them for user confirmation, syncs remote state, AI-translates into zh_TW, verifies against existing PO/POT, then appends new entries. Use when the user says 'extract translations for #NNNNN' or '/extract-i18n NNNNN'."
 ---
 
 # i18n String Extraction and Translation Workflow
 
 ## Overview
 
-Find all files changed by commits referencing a specific issue, extract new translatable strings using `civistrings`, sync with Transifex, and auto-translate into Traditional Chinese (Taiwan).
+Read `git diff` from commits referencing a specific issue, extract new translatable strings by AI pattern recognition, show them for user confirmation, sync remote translations, AI-translate into Traditional Chinese (Taiwan), verify against existing `civicrm.po` / `civicrm.pot`, then append new entries to both files.
 
 **Required input**: issue number (e.g. `45479`, without `#`). Ask the user if not provided.
 
----
-
-## Pre-flight Checks
-
-```bash
-# civistrings — primary extraction tool (at /home/jimmy/bin/civistrings or in PATH)
-which civistrings || ls /home/jimmy/bin/civistrings
-
-# gettext tools
-which msgmerge msgattrib msgfmt
-
-# Transifex CLI
-which tx
-```
-
-If `civistrings` is unavailable, fall back to the AI-based extraction described in the **Fallback** section below.
+**Default extraction method**: AI reads git diff directly — no external tools required. `civistrings` may be used as an alternative for large file sets if available.
 
 ---
 
@@ -63,13 +48,69 @@ echo "Changed translatable files:"
 echo "$FILES"
 ```
 
-Show the commit and file list to the user and confirm before proceeding.
+---
+
+## Step 2: AI-Based String Extraction from git diff
+
+Read the full diff of the identified commits, extract every translatable string by recognising the patterns below, and record each string's source file and line number.
+
+```bash
+# Get the combined diff for all found commits
+echo "$COMMITS" | xargs -I{} git -C "$CIVICRMPATH" show {} -- $FILES
+```
+
+### Patterns to extract
+
+**PHP — `ts()` calls**
+```php
+ts('Simple string')
+ts("With double quotes")
+ts('With placeholder %1', [1 => $var])
+ts('Multi %1 placeholders %2', [1 => $a, 2 => $b])
+```
+
+**Smarty — `{ts}` blocks**
+```smarty
+{ts}Simple string{/ts}
+{ts 1=$var}Hello %1{/ts}
+{ts escape='js'}String in JS context{/ts}
+```
+
+**JS — `ts()` / `CRM.ts()` calls**
+```js
+ts('Simple string')
+CRM.ts('Simple string')
+```
+
+For each string found in the diff (`+` lines only — ignore removed `-` lines):
+1. Record the source file path (relative to `CIVICRMPATH`) and line number for the `#:` comment.
+2. Normalise multi-line strings to a single-line `msgid`.
+3. Skip strings that are already present verbatim in `$CIVICRMPATH/l10n/pot/civicrm.pot`.
+
+### Display extracted strings in POT format for user confirmation
+
+Show each candidate entry in standard gettext format, **before any translation**:
+
+```
+#: templates/CRM/Event/Form/Registration/Register.tpl:125
+msgid "Registration is currently unavailable. Please contact the website administrator for assistance."
+msgstr ""
+
+#: CRM/Contribute/Form/Contribution.php:342
+msgid "Thank you for your contribution of %1."
+msgstr ""
+```
+
+Ask the user: **"Are these the strings to translate? (yes / edit / skip)"**
+- **yes** — continue to Step 3.
+- **edit** — let the user add, remove, or correct entries, then re-confirm.
+- **skip** — abort cleanly.
 
 ---
 
-## Step 2: Sync Remote State (Pull Before Modifying)
+## Step 3: Sync Remote State
 
-**Always pull the latest remote state before making any local changes.**
+Pull the latest remote translations and sync the PO file.
 
 ```bash
 SCRIPTS="$CIVICRMPATH/tools/scripts"
@@ -78,112 +119,48 @@ echo "=== Pulling latest translations from Transifex ==="
 "$SCRIPTS/pull-translation.sh"
 
 echo ""
-echo "=== Checking local POT vs remote PO (sync-pot) ==="
-"$SCRIPTS/sync-pot.sh"
+echo "=== Syncing PO file ==="
+"$SCRIPTS/sync-po.sh"
 ```
 
-`sync-pot.sh` prompts `[y/N]` when it finds orphaned msgids. If it does, explain the listed strings to the user and ask whether to confirm. If the user declines, stop and ask them to reconcile `civicrm.pot` manually before continuing.
+If either script exits with an error, stop and show the output to the user.
 
 ---
 
-## Step 3: Extract Strings with civistrings
+## Step 4: Check for Dirty / Uncommitted Work in l10n
+
+After syncing, verify that `l10n/` has no uncommitted changes before we write new entries.
 
 ```bash
-EXTRACTED_POT=$(mktemp --suffix=.pot)
-
-# Pass absolute paths via stdin; --base ensures #: comments use paths relative to CIVICRMPATH
-echo "$FILES" | sed "s|^|$CIVICRMPATH/|" \
-  | civistrings --base="$CIVICRMPATH" -o "$EXTRACTED_POT" -
-
-echo "Extracted: $(grep -c '^msgid "' "$EXTRACTED_POT") entries (including header)"
-```
-
-`civistrings` handles `ts()` in PHP, `{ts}` in Smarty, and translatable patterns in JS. It outputs proper GNU gettext POT format with `#:` source references.
-
----
-
-## Step 4: Identify New Strings
-
-Compare extracted msgids against the existing `civicrm.pot` to find strings not yet registered.
-
-```bash
-POT_FILE="$CIVICRMPATH/l10n/pot/civicrm.pot"
-
-mapfile -t NEW_STRINGS < <(
-  grep '^msgid "' "$EXTRACTED_POT" \
-  | grep -v '^msgid ""$' \
-  | sed 's/^msgid "//; s/"$//' \
-  | while IFS= read -r msgid; do
-      escaped=$(printf '%s' "$msgid" | sed 's/\\/\\\\/g; s/"/\\"/g')
-      if ! grep -qF "msgid \"${escaped}\"" "$POT_FILE"; then
-        printf '%s\n' "$msgid"
-      fi
-    done
-)
-
-echo "New strings: ${#NEW_STRINGS[@]}"
-
-if [ ${#NEW_STRINGS[@]} -eq 0 ]; then
-  echo "All strings are already in civicrm.pot. Nothing to add."
-  rm -f "$EXTRACTED_POT"
-  exit 0
+DIRTY=$(git -C "$CIVICRMPATH" status --porcelain -- l10n/)
+if [ -n "$DIRTY" ]; then
+  echo "Uncommitted changes detected under l10n/:"
+  git -C "$CIVICRMPATH" status --short -- l10n/
 fi
-
-printf '  - %s\n' "${NEW_STRINGS[@]}"
 ```
 
-Show the new string list to the user and confirm before writing.
+If dirty: **stop here** and tell the user:
+
+> "There are uncommitted changes under l10n/. Please commit or stash them before continuing, then re-run the skill."
+
+Do **not** stash or commit on the user's behalf.
 
 ---
 
-## Step 5: Append New Strings to civicrm.pot
+## Step 5: AI Translation
 
-Batch-write all new strings — do not call `add-source-string.sh` per string (it pulls and pushes every time, which is slow for multiple strings). Do not push string now, strings will be reviewed by human later.
+Translate each confirmed string into **Traditional Chinese (Taiwan style)** and format as PO entries with `#:` source references.
 
-```bash
-for msgid in "${NEW_STRINGS[@]}"; do
-  escaped=$(printf '%s' "$msgid" | sed 's/\\/\\\\/g; s/"/\\"/g')
-
-  # Retrieve the #: source references from the extracted POT
-  sources=$(grep -B5 "^msgid \"${escaped}\"$" "$EXTRACTED_POT" \
-    | grep '^#:' | sed 's/^#: //' | tr '\n' ' ' | sed 's/ $//')
-
-  if [ -n "$sources" ]; then
-    printf '\n#: %s\nmsgid "%s"\nmsgstr ""\n' "$sources" "$escaped" >> "$POT_FILE"
-  else
-    printf '\nmsgid "%s"\nmsgstr ""\n' "$escaped" >> "$POT_FILE"
-  fi
-
-  echo "Added to POT: $msgid"
-done
-
-rm -f "$EXTRACTED_POT"
+Show a draft translation block for the user to review before writing:
 
 ```
+#: templates/CRM/Event/Form/Registration/Register.tpl:125
+msgid "Registration is currently unavailable. Please contact the website administrator for assistance."
+msgstr "報名功能目前無法使用，請聯繫網站管理員以取得協助。"
 
----
-
-## Step 6: Translate and Write to zh_TW/civicrm.po
-
-Translate each new string into **Traditional Chinese (Taiwan style)** and batch-append to the PO file, then do not push string to remote, strings will be reviewed by human.
-
-```bash
-PO_FILE="$CIVICRMPATH/l10n/zh_TW/civicrm.po"
-
-for msgid in "${NEW_STRINGS[@]}"; do
-  escaped_msgid=$(printf '%s' "$msgid" | sed 's/\\/\\\\/g; s/"/\\"/g')
-  # Claude provides the translation here
-  escaped_msgstr=$(printf '%s' "TRANSLATION" | sed 's/\\/\\\\/g; s/"/\\"/g')
-
-  printf '\nmsgid "%s"\nmsgstr "%s"\n' "$escaped_msgid" "$escaped_msgstr" >> "$PO_FILE"
-  echo "Translated: $msgid → TRANSLATION"
-done
-
-echo ""
-
-echo "Regenerating MO file ..."
-msgfmt "$PO_FILE" -o "$CIVICRMPATH/l10n/zh_TW/LC_MESSAGES/civicrm.mo"
-echo "Done."
+#: CRM/Contribute/Form/Contribution.php:342
+msgid "Thank you for your contribution of %1."
+msgstr "感謝您捐款 %1。"
 ```
 
 ### Translation Rules (zh_TW)
@@ -237,73 +214,139 @@ echo "Done."
 | Please select | 請選擇 |
 | No results found | 找不到結果 |
 
+Ask the user to verify the translations. Let them correct any entry before proceeding.
+
 ---
 
-## Step 7: Verify Consistency and Stage Commit
+## Step 6: Verify — No Duplicates in Existing PO / POT
+
+Before writing, confirm each string is genuinely new and not already translated.
 
 ```bash
-# Check for orphaned strings: in PO but missing from POT
-TEMP_CHECK=$(mktemp --suffix=.po)
-msgmerge --no-fuzzy-matching --quiet "$PO_FILE" "$POT_FILE" -o "$TEMP_CHECK" 2>/dev/null
-ORPHANED=$(msgattrib --only-obsolete "$TEMP_CHECK" \
-  | grep '^#~ msgid "' | grep -v '^#~ msgid ""$')
-rm -f "$TEMP_CHECK"
+POT_FILE="$CIVICRMPATH/l10n/pot/civicrm.pot"
+PO_FILE="$CIVICRMPATH/l10n/zh_TW/civicrm.po"
 
-if [ -n "$ORPHANED" ]; then
-  echo "Warning: the following strings exist in PO but are missing from POT — please review:"
-  echo "$ORPHANED" | sed 's/^#~ msgid "//; s/"$//'
-else
-  echo "OK: PO and POT are consistent."
-fi
+# Build a temporary PO that contains ONLY the new entries (with translations from Step 5)
+TEMP_NEW=$(mktemp --suffix=.po)
+# ... write the new entries to $TEMP_NEW ...
+
+# Merge into the existing POT to detect collisions
+TEMP_MERGED=$(mktemp --suffix=.po)
+msgmerge --no-fuzzy-matching --quiet "$TEMP_NEW" "$POT_FILE" -o "$TEMP_MERGED" 2>/dev/null
+
+# Strings that msgmerge marks obsolete were already in POT — skip them
+ALREADY_IN_POT=$(msgattrib --only-obsolete "$TEMP_MERGED" \
+  | grep '^#~ msgid "' | grep -v '^#~ msgid ""$' \
+  | sed 's/^#~ msgid "//; s/"$//')
+
+# Strings already translated in PO
+ALREADY_IN_PO=$(grep -F 'msgid "' "$PO_FILE" \
+  | grep -v '^msgid ""$' \
+  | sed 's/^msgid "//; s/"$//')
+
+rm -f "$TEMP_MERGED" "$TEMP_NEW"
+```
+
+If any string is already present in the POT or has a non-empty `msgstr` in the PO, **skip it** and report it to the user:
+
+> "The following strings are already covered and will be skipped: ..."
+
+Only truly new, untranslated strings proceed to Step 7.
+
+---
+
+## Step 7: Append New Entries to civicrm.pot and civicrm.po
+
+Write the verified entries to both files — POT first (source-of-truth), then PO (with translations).
+
+```bash
+POT_FILE="$CIVICRMPATH/l10n/pot/civicrm.pot"
+PO_FILE="$CIVICRMPATH/l10n/zh_TW/civicrm.po"
+
+# Append to POT (msgstr always empty in POT)
+for entry in "${NEW_ENTRIES[@]}"; do
+  printf '\n%s\nmsgid "%s"\nmsgstr ""\n' "$sources" "$escaped_msgid" >> "$POT_FILE"
+done
+
+# Append to PO (with translated msgstr)
+for entry in "${NEW_ENTRIES[@]}"; do
+  printf '\n%s\nmsgid "%s"\nmsgstr "%s"\n' "$sources" "$escaped_msgid" "$escaped_msgstr" >> "$PO_FILE"
+done
+
+# Regenerate MO binary
+echo "Regenerating MO file ..."
+msgfmt "$PO_FILE" -o "$CIVICRMPATH/l10n/zh_TW/LC_MESSAGES/civicrm.mo"
+echo "Done."
 
 # Stage both files
 git -C "$CIVICRMPATH" add "$POT_FILE" "$PO_FILE"
 git -C "$CIVICRMPATH" status
 ```
 
-Show the diff and tell the user: "Please review the translation changes above. Run `/commit` when ready."
+Do **not** push to Transifex — strings will be reviewed by a human before pushing.
 
 ---
 
-## Fallback: AI-based Extraction (when civistrings is unavailable)
+## Step 8: Summary — Ask User to Verify
 
-When `civistrings` is not found, Claude reads each changed file directly and extracts translatable strings by recognising the patterns below. This handles multi-line and complex cases that grep cannot.
+Show a compact summary:
 
-### PHP — `ts()` calls
-```php
-ts('Simple string')
-ts("With double quotes")
-ts('With placeholder %1', [1 => $var])
-ts('Multi %1 placeholders %2', [1 => $a, 2 => $b])
+```
+=== i18n Extraction Summary ===
+Issue:           #45479
+Commits:         3
+Files scanned:   5
+Strings found:   8
+Already in POT:  3  (skipped)
+New strings:     5
+
+Added to civicrm.pot:
+  - "Registration is currently unavailable. ..."
+  - "Thank you for your contribution of %1."
+  - ...
+
+Translated in civicrm.po (zh_TW):
+  - "報名功能目前無法使用，請聯繫網站管理員以取得協助。"
+  - "感謝您捐款 %1。"
+  - ...
+
+Files staged:
+  l10n/pot/civicrm.pot
+  l10n/zh_TW/civicrm.po
+
+Please review the changes with `git diff --staged`, then commit when ready.
 ```
 
-### Smarty — `{ts}` blocks
-```smarty
-{ts}Simple string{/ts}
-{ts 1=$var}Hello %1{/ts}
-{ts escape='js'}String in JS context{/ts}
+---
+
+## Alternative: civistrings (for large file sets)
+
+If `civistrings` is available and the changed file set is large (> 20 files), it may be faster to run it instead of AI extraction in Step 2:
+
+```bash
+which civistrings || ls /home/jimmy/bin/civistrings
+
+EXTRACTED_POT=$(mktemp --suffix=.pot)
+echo "$FILES" | sed "s|^|$CIVICRMPATH/|" \
+  | civistrings --base="$CIVICRMPATH" -o "$EXTRACTED_POT" -
+
+echo "Extracted: $(grep -c '^msgid "' "$EXTRACTED_POT") entries"
 ```
 
-For each identified string, Claude:
-1. Records the source file and line number for the `#:` reference
-2. Skips strings already present in `civicrm.pot`
-3. Continues from **Step 4** onwards with the collected strings
+Then compare `$EXTRACTED_POT` against `civicrm.pot` to find new strings, and continue from Step 5 onwards.
 
 ---
 
 ## FAQ
 
-**sync-pot.sh shows orphaned strings — what do I do?**
-These are strings in the remote PO that the local POT doesn't know about (usually legacy entries). Show the list to the user, explain each one, and proceed only after they confirm.
+**sync-po.sh shows orphaned strings — what do I do?**
+Orphaned strings exist in the remote PO but not in the local POT (usually legacy entries). Show the list to the user, explain each one, and proceed only after they confirm.
 
 **String contains HTML — how to translate?**
 Keep HTML tags verbatim. Example: `Click <a href="%1">here</a>` → `點擊<a href="%1">此處</a>`
 
-**Multi-line msgid (contains `\n`) — how to handle?**
-`civistrings` formats these automatically. Preserve the formatting; translate each segment naturally.
+**Multi-line msgid — how to handle?**
+Normalise to a single-line string for the msgid; translate the whole sentence as one unit.
 
 **A string appears in multiple files — what goes in `#:`?**
-`civistrings` merges all source paths onto one `#:` line automatically.
-
-**Commits span multiple branches (develop, hotfix) — any issue?**
-No. `git log --all --grep` covers all branches; Step 1 needs no adjustment.
+List all source references on the same `#:` line, space-separated.
