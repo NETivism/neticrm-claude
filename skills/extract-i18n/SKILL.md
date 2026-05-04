@@ -120,7 +120,7 @@ echo "=== Pulling latest translations from Transifex ==="
 
 echo ""
 echo "=== Syncing PO file ==="
-"$SCRIPTS/sync-po.sh"
+"$SCRIPTS/sync-pot.sh"
 ```
 
 If either script exits with an error, stop and show the output to the user.
