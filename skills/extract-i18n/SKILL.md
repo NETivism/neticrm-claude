@@ -11,6 +11,8 @@ Read `git diff` from commits referencing a specific issue, extract new translata
 
 **Required input**: issue number (e.g. `45479`, without `#`). Ask the user if not provided.
 
+**User-provided translations**: Before starting, check if the user's prompt includes pre-specified translations (colleagues or PMs often supply the exact wording). If yes, use those translations exactly. If no translations are provided, apply UX best practices: concise, natural Taiwan Traditional Chinese phrasing suited to the UI context.
+
 **Default extraction method**: AI reads git diff directly — no external tools required. `civistrings` may be used as an alternative for large file sets if available.
 
 ---
@@ -283,7 +285,7 @@ git -C "$CIVICRMPATH" add "$POT_FILE" "$PO_FILE"
 git -C "$CIVICRMPATH" status
 ```
 
-Do **not** push to Transifex — strings will be reviewed by a human before pushing.
+Do **not** push to Transifex — the user must verify the translations first and push manually (see Step 8).
 
 ---
 
@@ -314,14 +316,15 @@ Files staged:
   l10n/pot/civicrm.pot
   l10n/zh_TW/civicrm.po
 
-Please review the changes with `git diff --staged`, then commit when ready.
-
-Next step — push to Transifex:
-  tx push -s   # push source strings (civicrm.pot)
-  tx push -t   # push translations (civicrm.po)
+Next steps:
+1. Review staged changes: `git diff --staged`
+2. **Also verify on the actual web interface** — browse to the relevant page and confirm the translated strings display correctly in context.
+3. Commit when satisfied.
+4. Push to Transifex from the civicrm root directory:
+   - `tx push -s`   ← push POT (source strings)
+   - `tx push -t`   ← push PO (translations)
+5. After pushing, **verify on Transifex** that the strings have synced successfully.
 ```
-
-> **Reminder:** After committing, push to Transifex with `tx push -s` (source strings) and `tx push -t` (translations) to keep all branches in sync. Skipping this step may cause translation drift between branches.
 
 ---
 
