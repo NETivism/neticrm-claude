@@ -124,7 +124,15 @@ Minimal complete example:
 | `<base>` | Namespace path for generated class | `CRM/Contribute` |
 | `<class>` | Class name (CamelCase, no prefix) | `ContributionProduct` |
 | `<name>` | Actual table name | `civicrm_contribution_product` |
-| `<add>` | CiviCRM version when added | `1.4` |
+| `<add>` | CiviCRM version when added | `4.0` |
+
+**`<add>` version number rules:**
+
+- Documents which CiviCRM version introduced the field/table — documentation only, does not affect GenCode output
+- Always use the **current codebase version**; never invent a future version number
+- Check the current version: `xml/version.xml` → `<version_no>4.0.0</version_no>`
+- This project runs **`4.0`** — all new fields must use `<add>4.0</add>`
+- Wrong: `<add>5.0</add>` — version does not exist; GenCode won't error but the value is meaningless
 
 ---
 
