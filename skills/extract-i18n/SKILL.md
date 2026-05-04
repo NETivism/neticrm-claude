@@ -315,7 +315,13 @@ Files staged:
   l10n/zh_TW/civicrm.po
 
 Please review the changes with `git diff --staged`, then commit when ready.
+
+Next step — push to Transifex:
+  tx push -s   # push source strings (civicrm.pot)
+  tx push -t   # push translations (civicrm.po)
 ```
+
+> **Reminder:** After committing, push to Transifex with `tx push -s` (source strings) and `tx push -t` (translations) to keep all branches in sync. Skipping this step may cause translation drift between branches.
 
 ---
 
