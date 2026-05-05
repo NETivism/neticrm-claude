@@ -264,6 +264,7 @@ Write the verified entries to both files — POT first (source-of-truth), then P
 ```bash
 POT_FILE="$CIVICRMPATH/l10n/pot/civicrm.pot"
 PO_FILE="$CIVICRMPATH/l10n/zh_TW/civicrm.po"
+MO_FILE="$CIVICRMPATH/l10n/zh_TW/LC_MESSAGES/civicrm.mo"
 
 # Append to POT (msgstr always empty in POT)
 for entry in "${NEW_ENTRIES[@]}"; do
@@ -277,11 +278,11 @@ done
 
 # Regenerate MO binary
 echo "Regenerating MO file ..."
-msgfmt "$PO_FILE" -o "$CIVICRMPATH/l10n/zh_TW/LC_MESSAGES/civicrm.mo"
+msgfmt "$PO_FILE" -o "$MO_FILE"
 echo "Done."
 
-# Stage both files
-git -C "$CIVICRMPATH" add "$POT_FILE" "$PO_FILE"
+# Stage all three files (MO is a binary derived from PO, but this repo has no auto-compile step)
+git -C "$CIVICRMPATH" add "$POT_FILE" "$PO_FILE" "$MO_FILE"
 git -C "$CIVICRMPATH" status
 ```
 
