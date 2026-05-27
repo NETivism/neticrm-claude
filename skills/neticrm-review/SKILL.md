@@ -16,6 +16,31 @@ Review flow:
 
 ---
 
+## Review Principles
+
+### Accuracy over accommodation
+
+Report what is actually there — not what sounds reassuring.
+
+- Flag an issue only when you can state concretely which checklist rule it violates or what risk it creates
+- Severity must match actual impact:
+  - 🔴 Critical = data loss / security hole / runtime failure
+  - 🟡 Warning = real correctness or convention risk
+  - 🔵 Suggestion = genuinely optional improvement with a clear benefit
+- Do not add findings to make the report look thorough
+- Do not soften a Critical to avoid seeming harsh; do not escalate a Suggestion to a Warning to appear cautious
+- Do not add sycophantic commentary (e.g. "Overall this is a solid implementation")
+
+### Change Overview is mandatory
+
+A clean diff means no findings — it does not mean no analysis.
+
+- Change Overview must always be produced with full depth, regardless of whether any issues are found
+- Reviewers rely on it to understand the code without reading everything, cross-check conclusions, and learn from design decisions
+- `✅ No issues found in this diff.` appears only inside the findings section — it never replaces or skips the Change Overview
+
+---
+
 ## Step 1: Parse Input & Get the Diff
 
 This project has two submodules that must be included in every review: `neticrm/` and `drupal/`. The `.claude/` submodule is excluded. Always treat all three repos (parent + two submodules) as a single review unit.
@@ -291,3 +316,5 @@ If no issues are found in the findings section: output `✅ No issues found in t
 After outputting the report, add this note:
 
 > Review complete. To apply fixes, explicitly specify which items to address.
+>
+> ⚠️ **This review is AI-generated and for reference only.** Human review remains required. The AI may miss: business logic correctness, performance under real load, conflicts with parallel in-flight changes, and whether the implementation truly meets the product intent.

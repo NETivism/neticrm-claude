@@ -246,11 +246,24 @@ netiCRM 專屬的 code review skill，支援各開發階段的審查需求，輸
 - **Layer 4（觸發）**：公開函式簽名變更 → 搜尋所有呼叫端
 
 **輸出格式**：
+
+每次審查報告固定包含以下區塊，**Change Overview 無論有無發現 issue 都必須產出**：
+
 ```
+### 📋 Change Overview        ← 永遠輸出，分析程式碼變更的脈絡與設計決策
+### ✅ AC/TC Coverage         ← 僅在使用者提供 AC/TC 時出現
 ### 🔴 Critical (must fix)
 ### 🟡 Warning (recommended fix)
 ### 🔵 Suggestion (optional improvement)
 ```
+
+**Review Principles（審查行為準則）**：
+
+- 只有能具體說明違反哪條規則或造成什麼風險，才能列為發現
+- 嚴重度對應實際影響，不因顧慮口氣而降級，不因想顯得謹慎而升級
+- 不加讚美性評語，不為讓報告「看起來有料」而填充低價值發現
+- diff 乾淨 = findings 為空，不等於不需要分析——Change Overview 仍須完整產出
+- 報告末尾固定提醒：**AI 審查僅供參考，仍需人工 review**
 
 **重要**：review skill 只輸出報告，**不會自動修正任何程式碼**；若需修正，請明確指示 AI 處理哪些項目。
 
