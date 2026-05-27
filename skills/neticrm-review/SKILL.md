@@ -8,10 +8,11 @@ description: "netiCRM project code review workflow covering PHP backend, fronten
 Review flow:
 
 1. **Parse input** — determine diff range from arguments or ask
-2. **Load checklists** — read only the relevant reference files
-3. **Review** — diff scan first, escalate to function/class context only on trigger
-4. **Report** — grouped by severity with file path, line, and fix suggestion
-5. **Finalize** — output note that fixes require explicit instruction
+2. **Gather context** — synthesize change purpose; ask for AC/TC if not provided
+3. **Load checklists** — read only the relevant reference files
+4. **Review** — diff scan first, escalate to function/class context only on trigger
+5. **Report** — change overview, AC/TC coverage, then findings grouped by severity
+6. **Finalize** — output note that fixes require explicit instruction
 
 ---
 
@@ -105,7 +106,48 @@ Add the resulting diffs to the review scope. If a submodule pointer changed but 
 
 ---
 
-## Step 2: Detect Scope & Load Checklists
+## Step 2: Gather Context
+
+### Ask for AC/TC
+
+If the user's input contains no Acceptance Criteria (AC) or Test Cases (TC), ask before proceeding:
+
+> Do you have Acceptance Criteria (AC) or Test Cases (TC) for this change?
+> They help evaluate whether the implementation is complete and correctly tested.
+> (Reply "skip" to proceed without them.)
+
+Record any AC/TC provided. They will be used in the Change Overview and report.
+
+### Synthesize Change Overview
+
+Read the commit messages from Step 1 and the diff to build a structured understanding of the change. For any BAO, core logic, or migration file in the diff, proactively read the full surrounding function (Layer 2) to understand design intent — not just to check for issues.
+
+Produce a **Change Overview** with the following sections. Depth scales with complexity; omit a section only if genuinely not applicable.
+
+**Background**
+Why was this change needed? What problem, bug, or requirement triggered it? Infer from commit messages and code; cite AC if provided.
+
+**What Changed**
+A detailed list of concrete changes, grouped by module or file area. For each item, describe both the technical change and its purpose.
+- [Module / file area] What was added, modified, or removed, and why
+- Example: `neticrm/civicrm_linepay` — added `preapproved` column to track pre-authorized payments; `completeTransaction()` updated to handle the new status flow
+
+**Affected Features / User Flows**
+Which user-facing features, admin pages, or API behaviors are affected? List each impacted flow briefly.
+
+**Key Implementation Decisions**
+Notable technical choices worth understanding:
+- Why a particular layer (BAO vs Form vs API) was chosen
+- How edge cases or rollback scenarios are handled
+- Migration strategy and idempotency approach (if applicable)
+- Any trade-offs made
+
+**Expected Outcome**
+What should behave differently after this change? Map to AC items if provided.
+
+---
+
+## Step 3: Detect Scope & Load Checklists
 
 Inspect changed file paths to decide which checklists to load:
 
@@ -125,7 +167,7 @@ For detailed rules beyond the checklists:
 
 ---
 
-## Step 3: Review
+## Step 4: Review
 
 Work through the diff file-by-file. Always start with Layer 1; escalate only when triggered.
 
@@ -177,7 +219,7 @@ If the diff is large (>300 changed lines), complete Layers 1–2 first, then not
 
 ---
 
-## Step 4: Output Report
+## Step 5: Output Report
 
 When issue number or hash range is known from Step 1, include it in the header. Otherwise omit it.
 
@@ -187,6 +229,37 @@ When issue number or hash range is known from Step 1, include it in the header. 
 **Range**: `abc1234..def5678` (N commits)  ← omit if not a hash range
   - abc1234 refs #45339, feat: ...
   - def5678 refs #45339, chore: ...
+
+---
+
+### 📋 Change Overview
+
+**Background**
+[Why this change was needed — problem, bug, or requirement]
+
+**What Changed**
+- [Module / file area] [Concrete change and its purpose]
+- [Module / file area] [Concrete change and its purpose]
+
+**Affected Features / User Flows**
+- [User-facing feature or flow impacted]
+
+**Key Implementation Decisions**
+- [Notable technical choice and reasoning]
+- [Migration / idempotency strategy if applicable]
+
+**Expected Outcome**
+- [What behaves differently after this change]
+- AC1: [description] ← include only if AC/TC was provided
+
+---
+
+### ✅ AC/TC Coverage          ← omit entire section if no AC/TC was provided
+| # | AC / TC | Status |
+|---|---------|--------|
+| 1 | [description] | ✅ Covered / ⚠️ Partial / ❌ Not covered |
+
+---
 
 ### 🔴 Critical (must fix)
 - **[Layer]** `path/to/File.php:42`
@@ -209,11 +282,11 @@ Summary: 🔴 Critical N  |  🟡 Warning N  |  🔵 Suggestion N
 
 Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[Security]`
 
-If no issues are found: output `✅ No issues found in this diff.`
+If no issues are found in the findings section: output `✅ No issues found in this diff.`
 
 ---
 
-## Step 5: After the Report
+## Step 6: After the Report
 
 After outputting the report, add this note:
 
