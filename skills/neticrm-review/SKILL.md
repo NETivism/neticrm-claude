@@ -17,6 +17,8 @@ Review flow:
 
 ## Step 1: Parse Input & Get the Diff
 
+This project has two submodules that must be included in every review: `neticrm/` and `drupal/`. The `.claude/` submodule is excluded. Always treat all three repos (parent + two submodules) as a single review unit.
+
 **Pattern A — Hash range (issue number optional)** (e.g. `#45339 abc1234 def5678` or `abc1234 def5678`)
 
 ```bash
@@ -25,36 +27,42 @@ git log --oneline <hash1>..<hash2>
 
 Show the commits and ask for confirmation before diffing. If `git log` returns nothing, warn that the hash order may be reversed (older hash must come first).
 
-If confirmed:
+If confirmed, get the parent diff and then expand submodule pointers (see **Submodule Expansion** below):
 ```bash
 git diff <hash1>..<hash2>
 ```
 
 **Pattern B — Issue number only** (e.g. `#45339`)
 
+Search all three repos in parallel:
+
 ```bash
 git log --all --oneline --grep="#45339"
+cd neticrm && git log --all --oneline --grep="#45339"
+cd drupal && git log --all --oneline --grep="#45339"
 ```
 
-Show found commits and ask:
+Show found commits grouped by repo and ask:
 
-> Found N commits. Which range to review?
-> 1. **All** (`<oldest>..<newest>`)
-> 2. **Specific range** — please provide start and end hash
+> Found N commits across repos. Which range(s) to review?
+> 1. **All** — use oldest..newest per repo
+> 2. **Specific range** — provide start and end hash (per repo)
 
-Then diff the confirmed range.
+Then diff each confirmed range and combine (apply **Submodule Expansion** to parent diff).
 
 **Pattern C — No arguments**
 
 ```bash
 git status --short
-git log --oneline -20
+git log --oneline -10
+cd neticrm && git log --oneline -10
+cd drupal && git log --oneline -10
 ```
 
 Then ask:
 
 > Which range to review?
-> 1. **Uncommitted changes** (`git diff HEAD`) — staged + unstaged
+> 1. **Uncommitted changes** (`git diff HEAD` in each repo) — staged + unstaged
 > 2. **Current branch vs develop** (`git diff origin/develop...HEAD`) — feature branch not yet merged
 > 3. **Recently merged into this branch** — show merge commits to pick from
 > 4. **Specific range or paste diff text**
@@ -67,10 +75,33 @@ Show merge commits and ask which one to review. Then diff using:
 ```bash
 git diff <merge-commit>^1..<merge-commit>
 ```
+Then apply **Submodule Expansion** to extract submodule diffs.
 
 **Pattern D — User pastes diff text directly**: use it as-is.
 
 Do not guess — if the input is ambiguous, always ask first.
+
+---
+
+### Submodule Expansion
+
+After obtaining any parent repo diff, scan it for `Subproject commit` lines. Each occurrence means a submodule's code changed. Extract the before/after hashes and diff inside the submodule directory:
+
+```
+# In parent diff:
+-Subproject commit <old_hash>
++Subproject commit <new_hash>
+```
+
+```bash
+# For neticrm submodule
+cd neticrm && git diff <old_hash>..<new_hash>
+
+# For drupal submodule
+cd drupal && git diff <old_hash>..<new_hash>
+```
+
+Add the resulting diffs to the review scope. If a submodule pointer changed but the submodule diff is empty (e.g. pointer-only bump with no real changes), skip it silently.
 
 ---
 
