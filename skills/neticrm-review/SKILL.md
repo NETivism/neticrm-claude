@@ -104,13 +104,58 @@ For detailed rules beyond the checklists, reference:
 
 ## Step 3: Review
 
-Work through the diff file-by-file:
+Work through the diff file-by-file using three levels of context depth. Always start with Layer 1; escalate to deeper layers only when triggered.
 
-- Only inspect `+` lines (new code being added)
-- Match each line against the relevant checklist items
-- Record: file path + approximate line number + issue description + suggested fix
+### Layer 1 — Diff scan (always)
 
-If the diff is large (>300 changed lines), prioritize 🔴 Critical items and mention that a partial review was done.
+Inspect `+` lines against the loaded checklists. Sufficient for:
+- Code style (indentation, `array()`, constant casing, semicolons)
+- Missing `{ts}` / translation wrappers
+- Missing `{literal}` or `escape='js'` in Smarty
+- Obvious SQL string concatenation (e.g. `"WHERE id = " . $id`)
+- Database / migration idempotency patterns
+
+### Layer 2 — Full function context (on trigger)
+
+When a `+` line matches any of these patterns, **read the complete surrounding function** (from its definition line to its closing `}`) before deciding whether to flag an issue:
+
+| Trigger pattern | Why context is needed |
+|----------------|-----------------------|
+| Any DB query (`executeQuery`, `db_select`, `db_query`) | Permission check or parameterization may exist earlier in the same function |
+| User input access (`$_GET`, `$_POST`, `CRM_Utils_Request`) | Input may already be validated/sanitized above |
+| Data write operation (insert / update / delete) | Permission check may be in `preProcess()` or a guard clause above |
+| `CRM_Core_Permission::check()` appears absent | May be enforced by parent class or route `<access_arguments>` |
+
+```bash
+# Read the full file, then locate the function boundaries
+Read path/to/File.php
+```
+
+Do not flag a security issue until you have confirmed the full function context.
+
+### Layer 3 — Class header context (on trigger)
+
+When a `+` line suggests an architecture problem, **read from the top of the file to the first method definition**:
+
+| Trigger pattern | Why context is needed |
+|----------------|-----------------------|
+| Business logic or DB query inside a `/Form/` file | May actually be a BAO helper method included in the Form |
+| Direct SQL in `/api/v3/` | Need to confirm the class/function role |
+| Suspicious `extends` or no clear layer identity | Determine DAO / BAO / Form / API responsibility before flagging |
+
+### Layer 4 — Caller search (on trigger)
+
+When a `+` or `-` line **changes a public function signature** (adds/removes/reorders parameters):
+
+```bash
+grep -r "functionName" /path/to/civicrm --include="*.php" -l
+```
+
+List the affected callers in the report as a 🔴 Critical if any exist outside the changed files.
+
+---
+
+If the diff is large (>300 changed lines), complete Layers 1–2 first, then note in the report that Layer 3–4 checks were done only on flagged items.
 
 ---
 
