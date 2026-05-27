@@ -1,6 +1,6 @@
 ---
 name: neticrm-review
-description: "netiCRM project code review workflow covering PHP backend, frontend (JS/CSS/Smarty), database schema/migrations, Drupal integration, and security. Use when reviewing a git diff or PR before pushing, doing a self-check on your own changes, auditing a specific technical layer, or performing a security-focused review. Checks compliance with netiCRM conventions (CiviCRM class hierarchy, 2-space indent, Smarty translation rules, idempotent migrations, D7/D10 API differences). Output: 🔴 Critical / 🟡 Warning / 🔵 Suggestion layered report."
+description: "netiCRM project code review workflow covering PHP backend, frontend (JS/CSS/Smarty), database schema/migrations, Drupal integration, and security. Use when reviewing a git diff or PR before pushing, doing a self-check on your own changes, auditing a specific technical layer, performing a security-focused review, or when given a specific issue number with commit hash range (e.g. '#45339 abc1234 def5678'). Checks compliance with netiCRM conventions (CiviCRM class hierarchy, 2-space indent, Smarty translation rules, idempotent migrations, D7/D10 API differences). Output: 🔴 Critical / 🟡 Warning / 🔵 Suggestion layered report."
 ---
 
 # netiCRM Code Review
@@ -20,25 +20,46 @@ Review flow:
 ### Input patterns (parse in order)
 
 **Pattern A — Issue + hash range** (e.g. `#45339 abc1234 def5678`)
+
 ```bash
-# Verify commits exist and show what will be reviewed
 git log --oneline <hash1>..<hash2>
-# Then diff
+```
+
+Display the found commits and ask for confirmation:
+
+> 確認審查以下 N 個 commits（`<hash1>..<hash2>`）？
+> abc1234 refs #45339, feat: ...
+> def5678 refs #45339, chore: ...
+
+If confirmed:
+```bash
 git diff <hash1>..<hash2>
 ```
-Include the issue number and commit list as a header in the report.
+
+If `git log` returns no commits, warn: "這個範圍沒有找到 commits，請確認 hash 順序是否正確（舊的在前、新的在後）。"
 
 **Pattern B — Hash range only** (e.g. `abc1234 def5678`)
+
+Same flow as Pattern A but without an issue number.
+
 ```bash
-git diff <hash1>..<hash2>
+git log --oneline <hash1>..<hash2>
+# Show commits → confirm → git diff <hash1>..<hash2>
 ```
 
 **Pattern C — Issue number only** (e.g. `#45339`)
+
 ```bash
-# Find related commits
 git log --all --oneline --grep="#45339"
 ```
-Show the found commits and ask the user to confirm the range before diffing.
+
+Show found commits and ask:
+
+> 找到以下 N 個 commits，要審查哪個範圍？
+> 1. **全部** (`<oldest_hash>..<newest_hash>`)
+> 2. **指定範圍** — 請提供起始和結束 hash
+
+Then diff the confirmed range.
 
 **Pattern D — No arguments**
 
@@ -95,10 +116,16 @@ If the diff is large (>300 changed lines), prioritize 🔴 Critical items and me
 
 ## Step 4: Output Report
 
-Use this exact structure:
+Use this exact structure. The header section is conditional — include only the fields that are known from Step 1.
 
 ```
 ## Code Review Report
+<!-- Include if issue number was provided: -->
+**Issue**: #45339
+<!-- Include if hash range was used: -->
+**Range**: `abc1234..def5678` (N commits)
+  - abc1234 refs #45339, feat: consolidate CKEditor dimensions
+  - def5678 refs #45339, chore: disable TinyMCE option
 
 ### 🔴 Critical（必須修正後才能 merge）
 - **[Layer]** `path/to/File.php:42`
