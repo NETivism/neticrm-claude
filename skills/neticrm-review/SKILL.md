@@ -1,6 +1,6 @@
 ---
 name: neticrm-review
-description: "netiCRM project code review workflow covering PHP backend, frontend (JS/CSS/Smarty), database schema/migrations, Drupal integration, and security. Use when reviewing a git diff or PR before pushing, doing a self-check on your own changes, auditing a specific technical layer, performing a security-focused review, or when given a specific issue number with commit hash range (e.g. '#45339 abc1234 def5678'). Checks compliance with netiCRM conventions (CiviCRM class hierarchy, 2-space indent, Smarty translation rules, idempotent migrations, D7/D10 API differences). Output: 🔴 Critical / 🟡 Warning / 🔵 Suggestion layered report."
+description: "netiCRM project code review workflow covering PHP backend, frontend (JS/CSS/Smarty), database schema/migrations, Drupal integration, and security. Use when reviewing code at any stage — before or after merge — including self-check before pushing, pre-PR review, retrospective review of merged commits, time-based audit, or security review of already-merged code. Also triggered by a specific issue number with commit hash range (e.g. '#45339 abc1234 def5678'). Checks compliance with netiCRM conventions (CiviCRM class hierarchy, 2-space indent, Smarty translation rules, idempotent migrations, D7/D10 API differences). Output: 🔴 Critical / 🟡 Warning / 🔵 Suggestion layered report."
 ---
 
 # netiCRM Code Review
@@ -11,7 +11,7 @@ Review flow:
 2. **Load checklists** — read only the relevant reference files
 3. **Review** — diff scan first, escalate to function/class context only on trigger
 4. **Report** — grouped by severity with file path, line, and fix suggestion
-5. **Offer fixes** — ask if style-only issues should be auto-corrected
+5. **Finalize** — output note that fixes require explicit instruction
 
 ---
 
@@ -38,9 +38,9 @@ git log --all --oneline --grep="#45339"
 
 Show found commits and ask:
 
-> 找到以下 N 個 commits，要審查哪個範圍？
-> 1. **全部** (`<oldest>..<newest>`)
-> 2. **指定範圍** — 請提供起始和結束 hash
+> Found N commits. Which range to review?
+> 1. **All** (`<oldest>..<newest>`)
+> 2. **Specific range** — please provide start and end hash
 
 Then diff the confirmed range.
 
@@ -48,15 +48,25 @@ Then diff the confirmed range.
 
 ```bash
 git status --short
-git log --oneline origin/develop..HEAD 2>/dev/null || git log --oneline -10
+git log --oneline -20
 ```
 
 Then ask:
 
-> 要審查哪個範圍？
-> 1. **未提交的變更** (`git diff HEAD`) — staged + unstaged
-> 2. **整個 branch 相對於 develop** (`git diff origin/develop...HEAD`) — PR 送審前
-> 3. **指定檔案或貼上 diff 文字**
+> Which range to review?
+> 1. **Uncommitted changes** (`git diff HEAD`) — staged + unstaged
+> 2. **Current branch vs develop** (`git diff origin/develop...HEAD`) — feature branch not yet merged
+> 3. **Recently merged into this branch** — show merge commits to pick from
+> 4. **Specific range or paste diff text**
+
+For option 3, run:
+```bash
+git log --oneline --merges -10
+```
+Show merge commits and ask which one to review. Then diff using:
+```bash
+git diff <merge-commit>^1..<merge-commit>
+```
 
 **Pattern D — User pastes diff text directly**: use it as-is.
 
@@ -147,17 +157,17 @@ When issue number or hash range is known from Step 1, include it in the header. 
   - abc1234 refs #45339, feat: ...
   - def5678 refs #45339, chore: ...
 
-### 🔴 Critical（必須修正後才能 merge）
+### 🔴 Critical (must fix)
 - **[Layer]** `path/to/File.php:42`
   Issue description.
   → Suggested fix
 
-### 🟡 Warning（建議修正）
+### 🟡 Warning (recommended fix)
 - **[Layer]** `path/to/file.tpl:18`
   Issue description.
   → Suggested fix
 
-### 🔵 Suggestion（可選改善）
+### 🔵 Suggestion (optional improvement)
 - **[Layer]** `path/to/file.js:55`
   Issue description.
   → Suggested fix
@@ -176,4 +186,4 @@ If no issues are found: output `✅ No issues found in this diff.`
 
 After outputting the report, add this note:
 
-> 以上為審查結果。如需修正，請明確告知要處理哪些項目，AI 才會著手修改。
+> Review complete. To apply fixes, explicitly specify which items to address.
