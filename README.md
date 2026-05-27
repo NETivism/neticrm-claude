@@ -23,7 +23,8 @@
     ├── neticrm-frontend/
     ├── neticrm-api/
     ├── playwright-testing/
-    └── extract-i18n/
+    ├── extract-i18n/
+    └── neticrm-review/
 ```
 
 ---
@@ -214,6 +215,52 @@ netiCRM REST API v3 的文件撰寫標準與呼叫參考。
 6. 驗證無重複字串
 7. 追加到 `civicrm.pot` 與 `l10n/zh_TW/civicrm.po`，重新產生 `.mo`
 8. 顯示摘要，提示使用者驗證後推送 Transifex
+
+---
+
+### `neticrm-review` — Code Review 工作流
+
+**觸發方式**：`/neticrm-review`（加可選參數）
+
+netiCRM 專屬的 code review skill，支援各開發階段的審查需求，輸出分層嚴重性報告。
+
+**觸發時機**：
+- **提交前自我審查**：推送前的程式碼自我檢查
+- **PR 前審查**：feature branch 合併前的品質把關
+- **合併後追查**：已合併的程式碼補審（Junior 審查、安全稽核、時間段審查）
+
+**輸入模式**：
+
+| 輸入格式 | 範例 | 行為 |
+|---------|------|------|
+| `#issue hash1 hash2` | `#45339 abc1234 def5678` | 顯示 commits，確認後 diff 指定 hash 範圍 |
+| `#issue` | `#45339` | 搜尋所有相關 commits，選擇範圍後 diff |
+| （無參數）| `/neticrm-review` | 詢問審查模式：未提交變更 / 與 develop 比較 / 最近合併的 branch / 指定範圍 |
+| （貼上 diff）| 直接貼 diff 文字 | 直接審查貼上的 diff |
+
+**審查分層**：
+
+- **Layer 1（必做）**：掃描所有 `+` 行，對照 checklist 檢查風格與明顯問題
+- **Layer 2（觸發）**：DB query、使用者輸入、資料寫入 → 讀取完整函式上下文
+- **Layer 3（觸發）**：架構疑慮（Form 中有業務邏輯、API 中有直接 SQL）→ 讀取類別 header
+- **Layer 4（觸發）**：公開函式簽名變更 → 搜尋所有呼叫端
+
+**輸出格式**：
+```
+### 🔴 Critical (must fix)
+### 🟡 Warning (recommended fix)
+### 🔵 Suggestion (optional improvement)
+```
+
+**重要**：review skill 只輸出報告，**不會自動修正任何程式碼**；若需修正，請明確指示 AI 處理哪些項目。
+
+| 參考文件 | 適用層 | 內容 |
+|---------|-------|------|
+| `references/php-checklist.md` | PHP | 風格、架構分層、安全性常見錯誤 |
+| `references/frontend-checklist.md` | CSS / JS / Smarty | 選擇器範圍、`cj()` 規則、`{ts}` 翻譯 |
+| `references/database-checklist.md` | Database | Schema/DAO 規範、migration 冪等守衛 |
+| `references/drupal-checklist.md` | Drupal | D7/D10 API 差異、CiviCRM 初始化規則 |
+| `references/security-checklist.md` | **全層（必載）** | SQL Injection、XSS、權限、GET 危險操作 |
 
 ---
 
