@@ -1,6 +1,6 @@
 ---
 name: neticrm-review
-description: "netiCRM project code review workflow covering PHP backend, frontend (JS/CSS/Smarty), database schema/migrations, Drupal integration, and security. Use when reviewing code at any stage — before or after merge — including self-check before pushing, pre-PR review, retrospective review of merged commits, time-based audit, or security review of already-merged code. Also triggered by a specific issue number with commit hash range (e.g. '#45339 abc1234 def5678'). Checks compliance with netiCRM conventions (CiviCRM class hierarchy, 2-space indent, Smarty translation rules, idempotent migrations, D7/D10 API differences). Output: 🔴 Critical / 🟡 Warning / 🔵 Suggestion layered report."
+description: "netiCRM code review workflow covering PHP, frontend (JS/CSS/Smarty), database migrations, Drupal integration, and security. Use at any stage — before or after merge — for self-check, pre-PR review, retrospective audit, or security review of merged code. Trigger with issue number, hash range, or no args. Outputs Change Overview + 🔴 Critical / 🟡 Warning / 🔵 Suggestion findings report."
 ---
 
 # netiCRM Code Review
@@ -43,43 +43,12 @@ A clean diff means no findings — it does not mean no analysis.
 
 ## Tool Use Guidelines
 
-Use the minimum tool calls needed. Never read more content than required to answer the question.
+See `references/tool-guidelines.md` for detailed patterns and examples. Core rules:
 
-### Read — always use offset/limit for function context
-
-Never `Read` an entire file to look for something — use `Grep` first, then read only the relevant range.
-
-```bash
-# Step 1: locate the function line number
-grep -n "function completeTransaction" CRM/Contribute/BAO/Contribution.php
-
-# Step 2: read only the relevant range
-Read CRM/Contribute/BAO/Contribution.php offset=<line-5> limit=100
-```
-
-For Layer 3 (class header only): `offset=0 limit=40` — do not re-read the whole file if it was already partially read in Layer 2.
-
-### Grep — two-step for codebase-wide search (Layer 4)
-
-```bash
-# Step 1: list files only
-grep -rl "functionName" . --include="*.php"
-
-# Step 2: get line numbers in matched files only
-grep -n "functionName" path/to/matched_file.php
-```
-
-### Bash — issue independent commands in the same turn
-
-When multiple Bash calls are independent (e.g., Pattern B searching all three repos, Pattern C showing recent logs), call them in the same response turn — do not wait for one to finish before issuing the next.
-
-### git diff — scope to paths when review is module-specific
-
-If the user asks to review a specific module, add a path filter to reduce output:
-
-```bash
-git diff <hash1>..<hash2> -- neticrm/ CRM/Contribute/
-```
+- **Grep before Read** — locate line numbers with `grep -n` first; read with `offset/limit`, never the whole file
+- **Layer 4 search** — `grep -rl` to list files first, then `grep -n` on matched files only
+- **Parallel calls** — issue independent Bash commands in the same response turn
+- **git diff scoping** — add path filter (`-- neticrm/ CRM/Contribute/`) when review is module-specific
 
 ---
 
@@ -187,30 +156,15 @@ Record any AC/TC provided. They will be used in the Change Overview and report.
 
 ### Synthesize Change Overview
 
-Read the commit messages from Step 1 and the diff to build a structured understanding of the change. For any BAO, core logic, or migration file in the diff, proactively read the full surrounding function (Layer 2) to understand design intent — not just to check for issues.
+Read commit messages from Step 1 and the diff. For any BAO, core logic, or migration file, proactively read the surrounding function (follow Tool Use Guidelines for offset/limit) to understand design intent — not just to check for issues.
 
-Produce a **Change Overview** with the following sections. Depth scales with complexity; omit a section only if genuinely not applicable.
+Produce a **Change Overview** with these five sections. Depth scales with complexity; omit a section only if genuinely not applicable:
 
-**Background**
-Why was this change needed? What problem, bug, or requirement triggered it? Infer from commit messages and code; cite AC if provided.
-
-**What Changed**
-A detailed list of concrete changes, grouped by module or file area. For each item, describe both the technical change and its purpose.
-- [Module / file area] What was added, modified, or removed, and why
-- Example: `neticrm/civicrm_linepay` — added `preapproved` column to track pre-authorized payments; `completeTransaction()` updated to handle the new status flow
-
-**Affected Features / User Flows**
-Which user-facing features, admin pages, or API behaviors are affected? List each impacted flow briefly.
-
-**Key Implementation Decisions**
-Notable technical choices worth understanding:
-- Why a particular layer (BAO vs Form vs API) was chosen
-- How edge cases or rollback scenarios are handled
-- Migration strategy and idempotency approach (if applicable)
-- Any trade-offs made
-
-**Expected Outcome**
-What should behave differently after this change? Map to AC items if provided.
+- **Background** — why the change was needed; cite AC if provided
+- **What Changed** — concrete changes grouped by module/file area, with technical purpose for each item
+- **Affected Features / User Flows** — user-facing features, admin pages, or API behaviors impacted
+- **Key Implementation Decisions** — layer choice (BAO vs Form vs API), edge case handling, migration strategy, trade-offs
+- **Expected Outcome** — what behaves differently after the change; map to AC items if provided
 
 ---
 
@@ -256,9 +210,7 @@ When a `+` line matches any of these patterns, read the complete surrounding fun
 - Data write operation (insert / update / delete)
 - `CRM_Core_Permission::check()` appears absent
 
-```bash
-Read path/to/File.php
-```
+Use `grep -n` to locate the function, then `Read` with `offset/limit` (see Tool Use Guidelines).
 
 **Do not flag a security issue until you have confirmed the full function context.** The permission check or parameterization may exist earlier in the same function.
 
