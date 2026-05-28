@@ -283,23 +283,46 @@ When issue number or hash range is known from Step 1, include it in the header. 
 ### 🔴 Critical (must fix)
 - **[Layer]** `path/to/File.php:42`
   Issue description.
-  → Suggested fix
+
+  ```php
+  // Before
+  problematic code snippet (extract from diff + lines or file read)
+  ```
+  ```php
+  // After
+  corrected code snippet
+  ```
 
 ### 🟡 Warning (recommended fix)
 - **[Layer]** `path/to/file.tpl:18`
   Issue description.
-  → Suggested fix
+
+  ```html
+  // Before
+  problematic code snippet
+  ```
+  ```html
+  // After
+  corrected code snippet
+  ```
 
 ### 🔵 Suggestion (optional improvement)
 - **[Layer]** `path/to/file.js:55`
   Issue description.
-  → Suggested fix
+  → Suggested approach   ← use text-only when no single code fix applies
+```
 
 ---
 Summary: 🔴 Critical N  |  🟡 Warning N  |  🔵 Suggestion N
 ```
 
 Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[Security]`
+
+**Before/After rules:**
+- Include Before/After code blocks for every finding where the fix is a specific code change
+- Extract **Before** from the diff `+` lines (Layer 1) or from the file read (Layer 2/3) — only the relevant lines, not the whole function
+- Write **After** as the corrected version of those same lines
+- Use `→ Suggested approach` text only when no concrete code fix applies (e.g., missing file, architectural redesign needed)
 
 If no issues are found in the findings section: output `✅ No issues found in this diff.`
 
