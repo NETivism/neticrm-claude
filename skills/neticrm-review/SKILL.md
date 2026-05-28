@@ -79,11 +79,28 @@ cd neticrm && git log --all --oneline --grep="#45339"
 cd drupal && git log --all --oneline --grep="#45339"
 ```
 
-Show found commits grouped by repo and ask:
+⛔ **STOP — do not run any diff commands yet.**
 
-> Found N commits across repos. Which range(s) to review?
-> 1. **All** — use oldest..newest per repo
-> 2. **Specific range** — provide start and end hash (per repo)
+Output the results grouped by repo, listing every commit found (including submodule commits — they are first-class commits, not background noise):
+
+```
+Found N commits across repos:
+
+Parent repo:
+- abc1234  refs #45339, ...
+- def5678  refs #45339, ...
+
+neticrm submodule:
+- 255cd80  refs #45339, ...
+
+drupal submodule: (none)
+
+Which range(s) to review?
+1. All — use oldest..newest per repo
+2. Specific range — provide start and end hash (per repo)
+```
+
+**Do not run any diff commands until the user replies and confirms the scope.**
 
 Then diff each confirmed range and combine (apply **Submodule Expansion** to parent diff).
 
