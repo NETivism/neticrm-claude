@@ -240,6 +240,8 @@ If the diff is large (>300 changed lines), complete Layers 1–2 first, then not
 
 ## Step 5: Output Report
 
+**Language**: Write the entire report in Traditional Chinese using Taiwan conventions (台灣用語繁體中文) by default — not Simplified Chinese, not Hong Kong usage. Use the user's specified language only if they explicitly request one. Code identifiers, file paths, and inline code remain in their original form regardless of language.
+
 When issue number or hash range is known from Step 1, include it in the header. Otherwise omit it.
 
 ```
