@@ -33,3 +33,18 @@ Applies to changes in `/templates/`, `/js/`, `/css/`. For full rules see `neticr
 | Hardcoded URL | URL strings instead of `{crmURL p='...' q='...'}` | 🟡 Warning |
 | Bare JS braces | `{` / `}` in `<script>` without `{literal}..{/literal}` wrapper | 🔴 Critical |
 | Parameter format | `{ts}Hello $name{/ts}` — must be `{ts 1=$name}Hello %1{/ts}` | 🟡 Warning |
+
+### Translation-safe Smarty helpers (do NOT flag as Missing `{ts}`)
+
+The following helpers call `ts()` internally in PHP. Passing a plain string literal is **correct**;
+wrapping it with `{ts}` would cause double-translation. Flagging these as "Missing `{ts}`" is a
+**false positive** — do not report it:
+
+| Helper | Auto-translated params | PHP implementation |
+|--------|----------------------|--------------------|
+| `{docURL text="..." title="..."}` | `text`, `title` | `CRM_Utils_System::docURL()` — calls `ts($params['text'])` on output |
+
+**Correct usage (no change needed):**
+```smarty
+{docURL page="CiviContribute Payment Processor Configuration" text="View Online Manual"}
+```

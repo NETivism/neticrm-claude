@@ -397,3 +397,11 @@ After outputting the report, add this note:
 > Review complete. To apply fixes, explicitly specify which items to address.
 >
 > ⚠️ **This review is AI-generated and for reference only.** Human review remains required. The AI may miss: business logic correctness, performance under real load, conflicts with parallel in-flight changes, and whether the implementation truly meets the product intent.
+
+### Knowledge gap prompt
+
+If a suspected finding was ruled out after reading the implementation, or an undocumented project pattern was discovered, append one prompt after the disclaimer:
+
+> 💡 **Reference update opportunity**: [one sentence — what was found, which `references/` file it belongs in]. Would you like me to add it?
+
+Skip if no gaps were found. One prompt per session — consolidate multiple gaps into one.
