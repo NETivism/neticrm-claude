@@ -39,6 +39,15 @@ A clean diff means no findings — it does not mean no analysis.
 - Reviewers rely on it to understand the code without reading everything, cross-check conclusions, and learn from design decisions
 - `✅ No issues found in this diff.` appears only inside the findings section — it never replaces or skips the Change Overview
 
+### Good code deserves recognition
+
+Silence on positive choices is a missed teaching opportunity.
+
+- While reviewing, actively look for 1–2 well-executed patterns worth highlighting: good architectural decisions, defensive edge-case handling, clean refactors, or design trade-offs handled correctly
+- These appear in the **✨ Notable Design Patterns** section of the report — not as praise, but as concrete examples of "what good looks like" in this codebase
+- Each entry must explain *why* the pattern is good and *when* to apply it elsewhere — otherwise skip it
+- Omit the entire section if the diff contains nothing architecturally notable
+
 ---
 
 ## Tool Use Guidelines
@@ -299,9 +308,15 @@ When issue number or hash range is known from Step 1, include it in the header. 
 
 ---
 
+### ✨ Notable Design Patterns          ← omit entire section if nothing architecturally notable
+- **`path/to/File.php` — Pattern name**: Why this design is good, what problem it solves, and in which similar scenarios it can be reused.
+
+---
+
 ### 🔴 Critical (must fix)
-- **[Layer]** `path/to/File.php:42`
+- **[Layer — subcategory]** `path/to/File.php:42`
   Issue description.
+  **Impact**: Who is affected, under what conditions this breaks, or why violating this rule is dangerous.
 
   ```php
   // Before
@@ -313,8 +328,9 @@ When issue number or hash range is known from Step 1, include it in the header. 
   ```
 
 ### 🟡 Warning (recommended fix)
-- **[Layer]** `path/to/file.tpl:18`
+- **[Layer — subcategory]** `path/to/file.tpl:18`
   Issue description.
+  **Impact**: Who is affected, under what conditions this breaks, or why violating this rule is dangerous.
 
   ```html
   // Before
@@ -326,22 +342,49 @@ When issue number or hash range is known from Step 1, include it in the header. 
   ```
 
 ### 🔵 Suggestion (optional improvement)
-- **[Layer]** `path/to/file.js:55`
+- **[Layer — subcategory]** `path/to/file.js:55`
   Issue description.
+  **Impact**: The concrete maintainability, readability, or consistency benefit this improvement brings.
   → Suggested approach   ← use text-only when no single code fix applies
 ```
 
 ---
 Summary: 🔴 Critical N  |  🟡 Warning N  |  🔵 Suggestion N
+
+### 📚 Key Takeaways          ← omit if findings ≤ 1 or all findings are trivial formatting issues
+1. **Principle name** (from 🟡 Warning N): One-sentence generalizable rule applicable to all instances of this problem type — not just this PR.
+2. **Principle name** (from 🔵 Suggestion N): Same format.
 ```
 
 Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[Security]`
+
+**Layer subcategory** (best-effort, append with ` — `):
+- PHP: `SQL safety`, `architecture`, `readability`, `i18n`
+- Smarty: `i18n`, `XSS`, `JS context`
+- JS: `formatting`, `security`, `event binding`
 
 **Before/After rules:**
 - Include Before/After code blocks for every finding where the fix is a specific code change
 - Extract **Before** from the diff `+` lines (Layer 1) or from the file read (Layer 2/3) — only the relevant lines, not the whole function
 - Write **After** as the corrected version of those same lines
 - Use `→ Suggested approach` text only when no concrete code fix applies (e.g., missing file, architectural redesign needed)
+
+**Impact rules:**
+- Every finding must include an `**Impact**` line between the description and Before/After
+- State the practical consequence: who is affected, under what conditions, and why the rule exists
+- For low-risk style findings (🔵), state the maintainability benefit rather than a risk scenario
+- One to two sentences maximum — do not pad
+
+**✨ Notable Design Patterns rules:**
+- Each entry: `**\`path/file.php\` — Pattern name**`: why it's good, what problem it solves, where to reuse
+- Maximum 3 entries per report — quality over quantity
+- Not praise — explain the *mechanism* that makes it correct
+
+**📚 Key Takeaways rules:**
+- Distill generalizable principles from the findings — not a finding summary
+- Each entry must cite which finding(s) it derives from
+- Maximum 4 entries; prefer principles applicable across future PRs
+- Omit entirely if findings count ≤ 1 or all findings are trivial formatting issues
 
 If no issues are found in the findings section: output `✅ No issues found in this diff.`
 
