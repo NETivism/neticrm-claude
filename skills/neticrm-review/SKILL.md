@@ -72,20 +72,27 @@ This project has two submodules (`neticrm/` and `drupal/`) and one sibling repo 
 
 ```bash
 pwd
-test -d neticrm/.git && echo "neticrm: ok" || echo "neticrm: MISSING"
-test -d drupal/.git  && echo "drupal: ok"  || echo "drupal: MISSING"
+git -C neticrm rev-parse --git-dir > /dev/null 2>&1 && echo "neticrm: ok" || echo "neticrm: MISSING"
+git -C drupal  rev-parse --git-dir > /dev/null 2>&1 && echo "drupal: ok"  || echo "drupal: MISSING"
 test -d ../neticrmp  && realpath ../neticrmp || echo "neticrmp: not found at ../neticrmp"
 ```
 
 Record these values and use them for all subsequent git commands:
 - `$CIVICRM` = the `pwd` output
-- `$NETICRM` = `$CIVICRM/neticrm` — if MISSING, skip silently in all commands
-- `$DRUPAL` = `$CIVICRM/drupal` — if MISSING, skip silently in all commands
-- `$NETICRMP` = the `realpath` output — if not found, ask the user:
+- `$NETICRM` = `$CIVICRM/neticrm`
+- `$DRUPAL` = `$CIVICRM/drupal`
+- `$NETICRMP` = the `realpath` output
 
-  > `neticrmp` was not found at `../neticrmp`. Please provide the path to your local `neticrmp` repository (e.g. `~/projects/neticrmp`):
+⛔ **STOP immediately if any repo is MISSING** — do not proceed with the review. For each missing repo, ask the user for the correct path:
 
-  Wait for the reply, then use that absolute path as `$NETICRMP`.
+> The following repos could not be found at the expected paths:
+> - `neticrm`: expected at `$CIVICRM/neticrm` ← list only missing ones
+> - `drupal`: expected at `$CIVICRM/drupal`
+> - `neticrmp`: expected at `../neticrmp`
+>
+> Please provide the correct absolute path(s) so the review can include all repos.
+
+Wait for the user's reply, update the affected path variable(s), then continue from **Detect Repo Paths**.
 
 ⚠️ **Always use `git -C <path>` instead of `cd <path> && git`** — `git -C` runs in the target directory without changing CWD, preventing subsequent commands from starting in the wrong place.
 
