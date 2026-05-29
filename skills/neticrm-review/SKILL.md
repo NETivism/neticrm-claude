@@ -30,6 +30,7 @@ Report what is actually there — not what sounds reassuring.
 - Do not add findings to make the report look thorough
 - Do not soften a Critical to avoid seeming harsh; do not escalate a Suggestion to a Warning to appear cautious
 - Do not add sycophantic commentary (e.g. "Overall this is a solid implementation")
+- **Attribution before severity**: Before assigning severity to any issue found via Layer 2/3 context reading (i.e., the problematic code is NOT in the diff's `+` lines), verify whether the code was introduced by this PR. Issues in pre-existing code that this PR neither introduced nor worsened are capped at 🔵 Suggestion and must be tagged `[pre-existing]`. Only code in `+` lines, or code that was actively made worse by this PR, warrants 🟡 Warning or higher.
 
 ### Change Overview is mandatory
 
@@ -274,6 +275,11 @@ Use `grep -n` to locate the function, then `Read` with `offset/limit` (see Tool 
 
 **Do not flag a security issue until you have confirmed the full function context.** The permission check or parameterization may exist earlier in the same function.
 
+**Pre-existing check (required before flagging any Layer 2/3 finding)**: After reading full function context, confirm whether the problematic lines appear in the diff's `+` lines.
+
+- If yes (introduced by this PR) → apply full severity per checklist rules.
+- If no (pre-existing code, untouched by this PR) → cap at 🔵 Suggestion, add `[pre-existing]` tag, note that this PR neither introduced nor worsened the issue.
+
 ### Layer 3 — Class header context (on trigger)
 
 When a `+` line suggests an architecture problem, read from the top of the file to the first method definition:
@@ -396,6 +402,9 @@ Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[
 - PHP: `SQL safety`, `architecture`, `readability`, `i18n`
 - Smarty: `i18n`, `XSS`, `JS context`
 - JS: `formatting`, `security`, `event binding`
+
+**Origin tag** (append when finding is in pre-existing code not changed by this PR):
+- `[pre-existing]` — issue existed before this PR; severity is capped at 🔵 Suggestion
 
 **Before/After rules:**
 - Include Before/After code blocks for every finding where the fix is a specific code change
