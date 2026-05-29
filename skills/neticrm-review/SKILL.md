@@ -125,13 +125,17 @@ neticrmp sibling repo:
 - 9600a63  refs #45339, ...
 
 Which range(s) to review?
-1. All — use oldest..newest per repo
+1. All — parent repo: oldest..newest; submodules: `git show <hash>` per `--grep`-found commit
 2. Specific range — provide start and end hash (per repo)
 ```
 
 **Do not run any diff commands until the user replies and confirms the scope.**
 
-Then diff each confirmed range and combine (apply **Submodule Expansion** to parent diff).
+Then diff each confirmed range:
+- **Parent repo**: `git diff <oldest>..<newest>` (or `git show <hash>` if single commit)
+- **Submodule repos**: use `--grep`-found commits directly — `git show <hash>` for a single commit, `git diff <oldest>^..<newest>` for multiple. Do NOT apply Submodule Expansion for Pattern B reviews — submodule pointer changes in the parent diff are irrelevant to issue scoping and must be ignored.
+
+In the report header, include submodule commits in the commit listing alongside parent repo commits.
 
 **Pattern C — No arguments**
 
@@ -169,7 +173,9 @@ Do not guess — if the input is ambiguous, always ask first.
 
 ### Submodule Expansion
 
-After obtaining any parent repo diff, scan it for `Subproject commit` lines. Each occurrence means a submodule's code changed. Extract the before/after hashes and diff inside the submodule directory:
+⚠️ **Pattern B exception**: When the review was triggered by issue number (Pattern B), do NOT apply pointer-range expansion. Submodule commits found via `--grep` in Step 1 are the authoritative scope — diff them directly as described above. If a submodule's pointer changed in the parent diff but NO commits were found via `--grep` for that submodule, skip it silently and note it in the report header (e.g. "drupal submodule: skipped — no commits tagged #NNNNN").
+
+**Applies to Pattern A and Pattern C only**: After obtaining any parent repo diff, scan it for `Subproject commit` lines. Each occurrence means a submodule's code changed. Extract the before/after hashes and diff inside the submodule directory:
 
 ```
 # In parent diff:
