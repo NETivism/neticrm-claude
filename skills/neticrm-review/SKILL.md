@@ -64,22 +64,30 @@ See `references/tool-guidelines.md` for detailed patterns and examples. Core rul
 
 ## Step 1: Parse Input & Get the Diff
 
-This project has two submodules (`neticrm/` and `drupal/`) and one sibling repo (`neticrmp`) that must be included in every review. The `.claude/` submodule is excluded. Always treat all four repos as a single review unit. The sibling repo path is resolved at review start (see **Resolve neticrmp Path** below).
+This project has two submodules (`neticrm/` and `drupal/`) and one sibling repo (`neticrmp`) that must be included in every review. The `.claude/` submodule is excluded. Always treat all four repos as a single review unit.
 
-### Resolve neticrmp Path
+### Detect Repo Paths
 
-Before running any repo commands, resolve the `neticrmp` sibling repo path:
+**Run this first, before parsing any input or running any git commands.** This captures absolute paths so all subsequent git commands work regardless of how CWD may drift between Bash calls:
 
 ```bash
-test -d ../neticrmp && echo "found" || echo "not found"
+pwd
+test -d neticrm/.git && echo "neticrm: ok" || echo "neticrm: MISSING"
+test -d drupal/.git  && echo "drupal: ok"  || echo "drupal: MISSING"
+test -d ../neticrmp  && realpath ../neticrmp || echo "neticrmp: not found at ../neticrmp"
 ```
 
-- If found: use `../neticrmp` as `$NETICRMP` for all subsequent commands.
-- If not found: immediately ask the user:
+Record these values and use them for all subsequent git commands:
+- `$CIVICRM` = the `pwd` output
+- `$NETICRM` = `$CIVICRM/neticrm` — if MISSING, skip silently in all commands
+- `$DRUPAL` = `$CIVICRM/drupal` — if MISSING, skip silently in all commands
+- `$NETICRMP` = the `realpath` output — if not found, ask the user:
 
   > `neticrmp` was not found at `../neticrmp`. Please provide the path to your local `neticrmp` repository (e.g. `~/projects/neticrmp`):
 
-  Wait for the reply, then use that path as `$NETICRMP`.
+  Wait for the reply, then use that absolute path as `$NETICRMP`.
+
+⚠️ **Always use `git -C <path>` instead of `cd <path> && git`** — `git -C` runs in the target directory without changing CWD, preventing subsequent commands from starting in the wrong place.
 
 **Pattern A — Hash range (issue number optional)** (e.g. `#45339 abc1234 def5678` or `abc1234 def5678`)
 
@@ -99,10 +107,10 @@ git diff <hash1>..<hash2>
 Search all four repos in parallel:
 
 ```bash
-git log --all --oneline --grep="#45339"
-cd neticrm && git log --all --oneline --grep="#45339"
-cd drupal && git log --all --oneline --grep="#45339"
-cd $NETICRMP && git log --all --oneline --grep="#45339"
+git -C $CIVICRM log --all --oneline --grep="#45339"
+git -C $NETICRM  log --all --oneline --grep="#45339"   # skip if MISSING
+git -C $DRUPAL   log --all --oneline --grep="#45339"   # skip if MISSING
+git -C $NETICRMP log --all --oneline --grep="#45339"
 ```
 
 ⛔ **STOP — do not run any diff commands yet.**
@@ -125,26 +133,28 @@ neticrmp sibling repo:
 - 9600a63  refs #45339, ...
 
 Which range(s) to review?
-1. All — parent repo: oldest..newest; submodules: `git show <hash>` per `--grep`-found commit
+1. All — all repos: `git show <hash>` per found commit
+   Parent repo (N commits): `git show <hash1>`, `git show <hash2>`, …
+   neticrm submodule (M commits): `git show <hash>`, …
+   (repos with no commits are omitted)
 2. Specific range — provide start and end hash (per repo)
 ```
 
 **Do not run any diff commands until the user replies and confirms the scope.**
 
 Then diff each confirmed range:
-- **Parent repo**: `git diff <oldest>..<newest>` (or `git show <hash>` if single commit)
-- **Submodule repos**: use `--grep`-found commits directly — `git show <hash>` for a single commit, `git diff <oldest>^..<newest>` for multiple. Do NOT apply Submodule Expansion for Pattern B reviews — submodule pointer changes in the parent diff are irrelevant to issue scoping and must be ignored.
+- **All repos (parent + submodules)**: use `--grep`-found commits directly — `git show <hash>` for each found commit. Run all `git show` calls in parallel. Do NOT apply Submodule Expansion for Pattern B reviews — submodule pointer changes in the parent diff are irrelevant to issue scoping and must be ignored.
 
 In the report header, include submodule commits in the commit listing alongside parent repo commits.
 
 **Pattern C — No arguments**
 
 ```bash
-git status --short
-git log --oneline -10
-cd neticrm && git log --oneline -10
-cd drupal && git log --oneline -10
-cd $NETICRMP && git log --oneline -10
+git -C $CIVICRM status --short
+git -C $CIVICRM log --oneline -10
+git -C $NETICRM  log --oneline -10   # skip if MISSING
+git -C $DRUPAL   log --oneline -10   # skip if MISSING
+git -C $NETICRMP log --oneline -10
 ```
 
 Then ask:
@@ -185,10 +195,10 @@ Do not guess — if the input is ambiguous, always ask first.
 
 ```bash
 # For neticrm submodule
-cd neticrm && git diff <old_hash>..<new_hash>
+git -C $NETICRM diff <old_hash>..<new_hash>
 
 # For drupal submodule
-cd drupal && git diff <old_hash>..<new_hash>
+git -C $DRUPAL diff <old_hash>..<new_hash>
 ```
 
 Add the resulting diffs to the review scope. If a submodule pointer changed but the submodule diff is empty (e.g. pointer-only bump with no real changes), skip it silently.
@@ -202,7 +212,7 @@ Add the resulting diffs to the review scope. If a submodule pointer changed but 
 When a review includes commits found in `neticrmp` (from Step 1), diff them directly:
 
 ```bash
-cd $NETICRMP && git diff <old_hash>..<new_hash>
+git -C $NETICRMP diff <old_hash>..<new_hash>
 ```
 
 If the issue number search in `$NETICRMP` found no commits, skip this step silently.
