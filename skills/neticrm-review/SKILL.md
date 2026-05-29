@@ -63,7 +63,22 @@ See `references/tool-guidelines.md` for detailed patterns and examples. Core rul
 
 ## Step 1: Parse Input & Get the Diff
 
-This project has two submodules that must be included in every review: `neticrm/` and `drupal/`. The `.claude/` submodule is excluded. Always treat all three repos (parent + two submodules) as a single review unit.
+This project has two submodules (`neticrm/` and `drupal/`) and one sibling repo (`neticrmp`) that must be included in every review. The `.claude/` submodule is excluded. Always treat all four repos as a single review unit. The sibling repo path is resolved at review start (see **Resolve neticrmp Path** below).
+
+### Resolve neticrmp Path
+
+Before running any repo commands, resolve the `neticrmp` sibling repo path:
+
+```bash
+test -d ../neticrmp && echo "found" || echo "not found"
+```
+
+- If found: use `../neticrmp` as `$NETICRMP` for all subsequent commands.
+- If not found: immediately ask the user:
+
+  > `neticrmp` was not found at `../neticrmp`. Please provide the path to your local `neticrmp` repository (e.g. `~/projects/neticrmp`):
+
+  Wait for the reply, then use that path as `$NETICRMP`.
 
 **Pattern A — Hash range (issue number optional)** (e.g. `#45339 abc1234 def5678` or `abc1234 def5678`)
 
@@ -80,12 +95,13 @@ git diff <hash1>..<hash2>
 
 **Pattern B — Issue number only** (e.g. `#45339`)
 
-Search all three repos in parallel:
+Search all four repos in parallel:
 
 ```bash
 git log --all --oneline --grep="#45339"
 cd neticrm && git log --all --oneline --grep="#45339"
 cd drupal && git log --all --oneline --grep="#45339"
+cd $NETICRMP && git log --all --oneline --grep="#45339"
 ```
 
 ⛔ **STOP — do not run any diff commands yet.**
@@ -104,6 +120,9 @@ neticrm submodule:
 
 drupal submodule: (none)
 
+neticrmp sibling repo:
+- 9600a63  refs #45339, ...
+
 Which range(s) to review?
 1. All — use oldest..newest per repo
 2. Specific range — provide start and end hash (per repo)
@@ -120,6 +139,7 @@ git status --short
 git log --oneline -10
 cd neticrm && git log --oneline -10
 cd drupal && git log --oneline -10
+cd $NETICRMP && git log --oneline -10
 ```
 
 Then ask:
@@ -168,6 +188,20 @@ Add the resulting diffs to the review scope. If a submodule pointer changed but 
 
 ---
 
+### Sibling Repo Expansion
+
+`neticrmp` is not a submodule — it is a separate sibling git repository (path resolved as `$NETICRMP` at review start). It must be diffed separately using its own hash range.
+
+When a review includes commits found in `neticrmp` (from Step 1), diff them directly:
+
+```bash
+cd $NETICRMP && git diff <old_hash>..<new_hash>
+```
+
+If the issue number search in `$NETICRMP` found no commits, skip this step silently.
+
+---
+
 ## Step 2: Gather Context
 
 ### Ask for AC/TC
@@ -203,7 +237,7 @@ Inspect changed file paths to decide which checklists to load:
 | `/CRM/**/*.php`, `/api/v3/**` | `references/php-checklist.md` |
 | `/templates/**/*.tpl`, `/js/**`, `/css/**` | `references/frontend-checklist.md` |
 | `/xml/schema/**`, `/CRM/**/DAO/**`, `/neticrm/neticrm_update/**`, `*.mysql` | `references/database-checklist.md` |
-| `/neticrm/**`, `/drupal/**` | `references/drupal-checklist.md` — also run `git branch --show-current` first |
+| `/neticrm/**`, `/drupal/**`, `$NETICRMP/**` | `references/drupal-checklist.md` — also run `git branch --show-current` first |
 | **Always** (every diff) | `references/security-checklist.md` |
 
 If the user asks for `--php-only`, `--frontend-only`, `--security`, or `--db-only`, restrict to that layer plus security.
@@ -253,7 +287,7 @@ When a `+` line suggests an architecture problem, read from the top of the file 
 When a public function signature changes (parameters added / removed / reordered):
 
 ```bash
-grep -r "functionName" /path/to/civicrm --include="*.php" -l
+grep -r "functionName" . $NETICRMP --include="*.php" -l
 ```
 
 Flag affected callers outside the changed files as 🔴 Critical.
