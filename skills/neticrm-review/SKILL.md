@@ -331,6 +331,15 @@ If the diff is large (>300 changed lines), complete Layers 1–2 first, then not
 
 **Language**: Write the entire report in Traditional Chinese using Taiwan conventions (台灣用語繁體中文) by default — not Simplified Chinese, not Hong Kong usage. Use the user's specified language only if they explicitly request one. Code identifiers, file paths, and inline code remain in their original form regardless of language.
 
+When writing in Traditional Chinese (default), translate these report sub-labels from the English template to Chinese in the output:
+- **Mechanism** → **機制**
+- **Practical Application** → **實際應用**
+- **Rule** → **規則**
+- **Underlying Principle** → **深層原理**
+- **How to Identify** → **識別方法**
+- Section title "Framework Context" → **框架脈絡**
+- "related:" in cross-references → **相關段落:**
+
 When issue number or hash range is known from Step 1, include it in the header. Otherwise omit it.
 
 ```
@@ -372,7 +381,15 @@ When issue number or hash range is known from Step 1, include it in the header. 
 ---
 
 ### ✨ Notable Design Patterns          ← omit entire section if nothing architecturally notable
-- **`path/to/File.php` — Pattern name**: Why this design is good, what problem it solves, and in which similar scenarios it can be reused.
+- **`path/to/File.php` — Pattern name**
+  **Mechanism**: Why this design is good and what problem it solves. (1–2 sentences)
+  **Practical Application**: The concrete trigger — when to reach for this pattern in your own code. (1 sentence)
+
+---
+
+### 🏗 Framework Context          ← omit entire section if no findings reference CiviCRM-specific architecture
+- **[Concept name]** (related: ✨ Notable Design Patterns N or 🟡 Warning N)
+  2–3 sentences explaining what the concept is, where it appears in netiCRM, and why its design constraint matters for correctness.
 
 ---
 
@@ -415,8 +432,14 @@ When issue number or hash range is known from Step 1, include it in the header. 
 Summary: 🔴 Critical N  |  🟡 Warning N  |  🔵 Suggestion N
 
 ### 📚 Key Takeaways          ← omit if findings ≤ 1 or all findings are trivial formatting issues
-1. **Principle name** (from 🟡 Warning N): One-sentence generalizable rule applicable to all instances of this problem type — not just this PR.
-2. **Principle name** (from 🔵 Suggestion N): Same format.
+1. **Principle name** (from 🟡 Warning N)
+   - **Rule**: One-sentence generalizable rule applicable to all instances of this problem type.
+   - **Underlying Principle**: Why this rule exists — the language semantics, framework design, or invariant that makes the violation dangerous. (1–2 sentences)
+   - **How to Identify**: A concrete code smell or trigger phrase to spot this in future code reviews. (1 sentence)
+2. **Principle name** (from 🔵 Suggestion N)
+   - **Rule**: ...
+   - **Underlying Principle**: ...
+   - **How to Identify**: ...
 ```
 
 Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[Security]`
@@ -444,15 +467,27 @@ Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[
 - One to two sentences maximum — do not pad
 
 **✨ Notable Design Patterns rules:**
-- Each entry: `**\`path/file.php\` — Pattern name**`: why it's good, what problem it solves, where to reuse
+- Each entry uses 2-line structure: **Mechanism** (why it's correct, what problem it solves) + **Practical Application** (the trigger condition for applying it)
 - Maximum 3 entries per report — quality over quantity
 - Not praise — explain the *mechanism* that makes it correct
+- **Practical Application** must be actionable: a concrete scenario beginning with "When...", not a vague "can be reused"
+
+**🏗 Framework Context rules:**
+- Include only when 1+ findings or design patterns reference CiviCRM-specific architecture that is non-obvious to engineers new to CiviCRM
+- Triggers: CiviCRM Form lifecycle (preProcess/buildForm/formRule/postProcess), BAO vs Form layer separation, Payment Processor architecture (checkConfig / singleton), Drupal hook system
+- Each entry: 2–3 sentences — what the concept is, where it appears in netiCRM code, and why its design constraint matters for correctness
+- Maximum 3 entries per report. Cross-reference back to the relevant finding or design pattern
+- Omit entirely if the diff touches no CiviCRM-specific architecture concepts
 
 **📚 Key Takeaways rules:**
 - Distill generalizable principles from the findings — not a finding summary
 - Each entry must cite which finding(s) it derives from
 - Maximum 4 entries; prefer principles applicable across future PRs
 - Omit entirely if findings count ≤ 1 or all findings are trivial formatting issues
+- Each entry uses the 3-line structure: **Rule** / **Underlying Principle** / **How to Identify**
+  - **Rule**: the practical rule, one sentence
+  - **Underlying Principle**: the underlying reason — language semantics, framework invariant, or architecture constraint; 1–2 sentences
+  - **How to Identify**: a concrete code smell a junior engineer can use to spot this pattern; 1 sentence
 
 If no issues are found in the findings section: output `✅ No issues found in this diff.`
 
