@@ -240,7 +240,7 @@ Record any AC/TC provided. They will be used in the Change Overview and report.
 
 ### Synthesize Change Overview
 
-Read commit messages from Step 1 and the diff. For any BAO, core logic, or migration file, proactively read the surrounding function (follow Tool Use Guidelines for offset/limit) to understand design intent — not just to check for issues.
+Read the full commit message (`git show` output, not the `--oneline` subject) and the diff for each commit. A commit subject line is rarely enough to explain why a fix was needed — the body, the linked issue number, and the actual before/after code together are what establish the original problem. For any BAO, core logic, or migration file, proactively read the surrounding function (follow Tool Use Guidelines for offset/limit) to understand design intent — not just to check for issues.
 
 Produce a **Change Overview** with these five sections. Depth scales with complexity; omit a section only if genuinely not applicable:
 
@@ -249,6 +249,19 @@ Produce a **Change Overview** with these five sections. Depth scales with comple
 - **Affected Features / User Flows** — user-facing features, admin pages, or API behaviors impacted
 - **Key Implementation Decisions** — layer choice (BAO vs Form vs API), edge case handling, migration strategy, trade-offs
 - **Expected Outcome** — what behaves differently after the change; map to AC items if provided
+
+### Commit-by-Commit Breakdown (commit-based reviews only)
+
+Applies whenever the review scope is one or more named commits (Pattern A, Pattern B, or Pattern C option 3). Skip entirely for Pattern C option 1 (uncommitted changes) and option 2 (branch diff with many unrelated commits) — there, `What Changed` above is sufficient.
+
+For each commit (group commits together only if they are sequential fixes to the same root cause — e.g. a fix + its immediate follow-up correction):
+
+- **Original Problem** — the symptom that was actually observed or reported. Pull this from the commit message body and linked issue number, not just the subject line. If the message gives no rationale at all, say so explicitly instead of inventing one.
+- **Root Cause** — why the bug happened, established by reading the pre-fix code (the diff's `-` lines, or the parent commit's version of the file via `git show <hash>^:path/to/file`). Do not restate the symptom as the cause.
+- **Fix Rationale** — what the commit changed and why this approach, specifically what alternative fixes existed and why this one was chosen, if inferable from the code or message. If not inferable, state the fix mechanism without guessing at rejected alternatives.
+- **Before/After** — the actual code from that commit's diff (not a review suggestion). Use `-`/`+` lines directly; trim to the relevant lines only.
+
+This section documents what the commit *already did*, separate from any 🔴/🟡/🔵 findings the review raises about it — do not conflate the two.
 
 ---
 
@@ -329,16 +342,20 @@ If the diff is large (>300 changed lines), complete Layers 1–2 first, then not
 
 ## Step 5: Output Report
 
-**Language**: Write the entire report in Traditional Chinese using Taiwan conventions (台灣用語繁體中文) by default — not Simplified Chinese, not Hong Kong usage. Use the user's specified language only if they explicitly request one. Code identifiers, file paths, and inline code remain in their original form regardless of language.
+**Language**: Write the entire report in Traditional Chinese using Taiwan conventions by default — not Simplified Chinese, not Hong Kong usage. Use the user's specified language only if they explicitly request one. Code identifiers, file paths, and inline code remain in their original form regardless of language.
 
-When writing in Traditional Chinese (default), translate these report sub-labels from the English template to Chinese in the output:
-- **Mechanism** → **機制**
-- **Practical Application** → **實際應用**
-- **Rule** → **規則**
-- **Underlying Principle** → **深層原理**
-- **How to Identify** → **識別方法**
-- Section title "Framework Context" → **框架脈絡**
-- "related:" in cross-references → **相關段落:**
+When writing in Traditional Chinese (default), translate every report sub-label and section title below from the English template into natural Traditional Chinese using Taiwan usage — do not leave them in English:
+- **Mechanism**
+- **Practical Application**
+- **Rule**
+- **Underlying Principle**
+- **How to Identify**
+- Section title "Framework Context"
+- "related:" in cross-references
+- Section title "Commit-by-Commit Breakdown"
+- **Original Problem**
+- **Root Cause**
+- **Fix Rationale**
 
 When issue number or hash range is known from Step 1, include it in the header. Otherwise omit it.
 
@@ -370,6 +387,22 @@ When issue number or hash range is known from Step 1, include it in the header. 
 **Expected Outcome**
 - [What behaves differently after this change]
 - AC1: [description] ← include only if AC/TC was provided
+
+---
+
+### 🔍 Commit-by-Commit Breakdown          ← omit entire section for Pattern C option 1/2 (no named commits)
+- **Commit `abc1234`** — [commit subject]
+  **Original Problem**: [symptom actually reported/observed, from commit body or issue]
+  **Root Cause**: [why it broke, from reading the pre-fix code]
+  **Fix Rationale**: [what the fix does and why this approach]
+  ```php
+  // Before (from commit diff)
+  ...
+  ```
+  ```php
+  // After (from commit diff)
+  ...
+  ```
 
 ---
 
