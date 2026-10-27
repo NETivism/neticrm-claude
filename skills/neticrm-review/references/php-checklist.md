@@ -32,7 +32,7 @@ Applies to changes in `/CRM/` and `/api/v3/`. For full rules see `neticrm-backen
 |-------|-----------------|---------|
 | Raw superglobals | Direct use of `$_GET`/`$_POST` — use `CRM_Utils_Request::retrieve()` | 🔴 Critical |
 | SQL injection | String concatenation in SQL — must use `CRM_Core_DAO::executeQuery($sql, [params])` | 🔴 Critical |
-| Missing permission | Data access without prior `CRM_Core_Permission::check('permission string')` | 🔴 Critical |
+| Missing permission | Page/Form/API entry point exposes data without a permission gate (see `security-checklist.md`) — not applicable to BAO methods | 🔴 Critical |
 | Unescaped output | User data echoed without `CRM_Utils_String::escapeHtml()` | 🔴 Critical |
 | New without parens | `new Foo` — must always include parentheses: `new Foo()` | 🟡 Warning |
 | PHP 7.3 compat | Avoid `str_contains()`, `array_is_list()`, named arguments — requires 7.3+ compat | 🔴 Critical |

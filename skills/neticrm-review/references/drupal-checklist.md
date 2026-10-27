@@ -28,7 +28,7 @@ git branch --show-current
 | Check | What to look for | Severity |
 |-------|-----------------|---------|
 | Initialization | CiviCRM API called without prior initialization | 🔴 Critical |
-| D7 pattern | `civicrm_initialize()` before `civicrm_api()` calls | 🔴 Critical |
+| D7 pattern | `civicrm_initialize()` before `civicrm_api()` calls (not required in `neticrm_update/update/*.inc` — see `database-checklist.md`) | 🔴 Critical |
 | D10 pattern | `\Drupal::service('civicrm')->initialize()` before API calls | 🔴 Critical |
 
 ## Module Structure

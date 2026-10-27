@@ -19,7 +19,8 @@ Applies to changes in `/xml/schema/`, `/CRM/**/DAO/`, `/neticrm/neticrm_update/u
 | Create table guard | `CREATE TABLE` without prior `SHOW TABLES LIKE '...'` check | 🔴 Critical |
 | Sequential number | `neticrm_xNNN.inc` — confirm NNN is next after highest existing file | 🟡 Warning |
 | Function name | `_neticrm_update_update_xNNN()` matches filename number | 🟡 Warning |
-| civicrm_initialize | `civicrm_initialize()` called at function start | 🔴 Critical |
+
+Do not flag a missing `civicrm_initialize()` in update functions: `neticrm_update_load_include()` in `neticrm_update.install` already calls it before loading each update file.
 
 ## Table Definitions
 

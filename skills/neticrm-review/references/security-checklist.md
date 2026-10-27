@@ -7,9 +7,13 @@ Run on every diff regardless of layer. These are the highest-risk issues.
 | Check | What to look for | Severity |
 |-------|-----------------|---------|
 | Route permission | Menu XML `<access_arguments>` is present and not empty | 🔴 Critical |
-| BAO permission | Data retrieval/modification in BAO without `CRM_Core_Permission::check()` | 🔴 Critical |
-| API permission | API endpoint exposes data without `_spec()` / `$spec['check_permissions']` guard | 🔴 Critical |
+| Entry-point permission | Page/Form or custom handler reads or writes data its route does not already restrict, with no `CRM_Core_Permission::check()` in the handler | 🔴 Critical |
+| API permission | New API entity/action not added to `CRM/Core/DAO/.permissions.php` — unmapped calls fall back to `access CiviCRM` only | 🔴 Critical |
 | Drupal route | `.routing.yml` `requirements._permission` is set | 🔴 Critical |
+
+Do not flag BAO methods for lacking `CRM_Core_Permission::check()`. BAOs are called by trusted code (cron, IPN, API with `check_permissions` off); permissions belong at the route, Form/Page, or API layer.
+
+API permissions are enforced centrally in `api/api.php` via `_civicrm_api3_api_check_permission()`, only when `$params['check_permissions']` is set (REST always sets it). `_spec()` functions declare parameters and are not a permission guard.
 
 ## SQL Injection
 

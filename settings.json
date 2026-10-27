@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/setup.env)",
+      "Edit(**/setup.env)",
+      "Read(**/storageState.json)",
+      "Edit(**/storageState.json)"
+    ]
+  }
+}

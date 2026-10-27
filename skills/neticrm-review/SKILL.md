@@ -496,6 +496,7 @@ Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[
 - State the practical consequence: who is affected, under what conditions, and why the rule exists
 - **Trigger conditions**: When an issue requires multiple conditions to trigger simultaneously, list them explicitly. Then label the practical likelihood: `(common)` — most default installations are affected; `(uncommon)` — requires a specific non-default configuration; `(rare)` — two or more uncommon conditions must coincide. Do not imply widespread impact when the actual trigger is narrow.
 - **UI reachability**: Consider whether a user can actually reach this code path through normal UI operations. If the path requires configuration the UI does not expose, is blocked by upstream validation, or depends on a state the system never produces, add: `(not reachable via UI — [one-line reason])`. A finding that is not UI-reachable should be 🔵 Suggestion at most, regardless of code severity.
+  - **Exception — `[Security]` findings**: attackers do not use the UI. If the path is reachable by a crafted request (direct URL, forged POST, REST/API call, IPN/webhook), do not cap the severity; state the request that reaches it instead.
 - For low-risk style findings (🔵), state the maintainability benefit rather than a risk scenario
 - One to two sentences maximum — do not pad
 
