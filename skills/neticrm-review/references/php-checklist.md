@@ -30,9 +30,9 @@ Applies to changes in `/CRM/` and `/api/v3/`. For full rules see `neticrm-backen
 
 | Check | What to look for | Severity |
 |-------|-----------------|---------|
-| Raw superglobals | Direct use of `$_GET`/`$_POST` — use `CRM_Utils_Request::retrieve()` | 🔴 Critical |
-| SQL injection | String concatenation in SQL — must use `CRM_Core_DAO::executeQuery($sql, [params])` | 🔴 Critical |
+| Raw superglobals | Direct use of `$_GET`/`$_POST`/`$_REQUEST` — use `CRM_Utils_Request::retrieve()` with a type. Reading alone is not a vulnerability; when the value reaches SQL or HTML unsanitized, report it under the SQL/XSS rules instead | 🟡 Warning |
+| SQL injection | User-controlled value concatenated into SQL (see `security-checklist.md`) — use `CRM_Core_DAO::executeQuery($sql, [params])` | 🔴 Critical |
 | Missing permission | Page/Form/API entry point exposes data without a permission gate (see `security-checklist.md`) — not applicable to BAO methods | 🔴 Critical |
-| Unescaped output | User data echoed without `CRM_Utils_String::escapeHtml()` | 🔴 Critical |
+| Unescaped output | User data echoed without `htmlspecialchars()` (or `CRM_Utils_String::htmlPurifier()` when rich HTML is allowed) | 🔴 Critical |
 | New without parens | `new Foo` — must always include parentheses: `new Foo()` | 🟡 Warning |
-| PHP 7.3 compat | Avoid `str_contains()`, `array_is_list()`, named arguments — requires 7.3+ compat | 🔴 Critical |
+| PHP 7.4 compat | `CRM/`, `api/`, `templates/` are shared by the 7.x (PHP 7.4) and 10.x branches. Flag PHP 8-only features: `str_contains()`/`str_starts_with()`/`str_ends_with()`, `array_is_list()`, `match`, nullsafe `?->`, named arguments, constructor property promotion, union or `mixed` types, `throw` as an expression, trailing comma in parameter lists | 🔴 Critical |

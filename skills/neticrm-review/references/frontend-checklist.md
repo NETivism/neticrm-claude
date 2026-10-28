@@ -6,7 +6,7 @@ Applies to changes in `/templates/`, `/js/`, `/css/`. For full rules see `neticr
 
 | Check | What to look for | Severity |
 |-------|-----------------|---------|
-| Selector scoping | All CiviCRM-specific selectors prefixed with `.crm-container` | 🔴 Critical |
+| Selector scoping | All CiviCRM-specific selectors prefixed with `.crm-container` — unscoped rules leak into Drupal theme pages | 🟡 Warning |
 | CSS variables | Colors use `--color-*` or `--rfm-*` variables — no hardcoded hex/rgb | 🟡 Warning |
 | Responsive design | Uses mobile-first `min-width` media queries, not `max-width` | 🟡 Warning |
 | Grid system | Uses `ncg-row` / `ncg-col-*` classes — not custom flex/grid | 🟡 Warning |
@@ -16,7 +16,7 @@ Applies to changes in `/templates/`, `/js/`, `/css/`. For full rules see `neticr
 
 | Check | What to look for | Severity |
 |-------|-----------------|---------|
-| jQuery alias | `$` used at top level — must use `cj()` or pass `$` via closure | 🔴 Critical |
+| jQuery alias | `$` used at top level — must use `cj()` or pass `$` via closure. `js/noconflict.js` runs `jQuery.noConflict(true)`, so a global `$` is undefined or Drupal's jQuery without netiCRM plugins | 🔴 Critical |
 | Closure wrapping | Code wrapped in `(function($) { 'use strict'; ... })(cj)` | 🟡 Warning |
 | Event delegation | Binding directly to dynamic elements — must use `cj(document).on(event, selector, fn)` | 🟡 Warning |
 | Strict equality | `==` or `!=` used — must be `===` / `!==` | 🟡 Warning |

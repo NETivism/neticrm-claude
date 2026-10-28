@@ -1,14 +1,21 @@
 # Drupal Review Checklist
 
-Applies to changes in `/neticrm/` and `/drupal/`. Always check current branch first.
+Applies to changes in `/neticrm/`, `/drupal/`, and `$NETICRMP`. Detect the Drupal version first.
 
-## Branch Detection
+## Drupal Version Detection
+
+The parent repo branch (`hotfix`, `develop`, …) does not encode the Drupal version; the `drupal` submodule branch does.
 
 ```bash
-git branch --show-current
-# 7.x-* → Drupal 7 rules apply
+git -C $DRUPAL branch --show-current
+# 7.x-*  → Drupal 7 rules apply
 # 10.x-* → Drupal 10 rules apply
+# empty (detached HEAD) → $DRUPAL/civicrm.info.yml exists = D10, $DRUPAL/civicrm.info exists = D7
 ```
+
+If a reviewed submodule or `$NETICRMP` commit is not in the current checkout (`git -C <repo> merge-base --is-ancestor <hash> HEAD` fails), the commit may belong to the other Drupal version — ask the user which version applies instead of guessing.
+
+Parent repo code (`CRM/`, `api/`, `templates/`) is shared by both versions: do not apply the Drupal API rules below to it.
 
 ## API Version Differences
 
@@ -27,9 +34,9 @@ git branch --show-current
 
 | Check | What to look for | Severity |
 |-------|-----------------|---------|
-| Initialization | CiviCRM API called without prior initialization | 🔴 Critical |
-| D7 pattern | `civicrm_initialize()` before `civicrm_api()` calls (not required in `neticrm_update/update/*.inc` — see `database-checklist.md`) | 🔴 Critical |
-| D10 pattern | `\Drupal::service('civicrm')->initialize()` before API calls | 🔴 Critical |
+| Initialization | CiviCRM API or `CRM_*` classes used without prior initialization (not required in `neticrm_update/update/*.inc` — see `database-checklist.md`) | 🔴 Critical |
+
+Both `civicrm_initialize()` and `\Drupal::service('civicrm')->initialize()` are valid on D10 — the former is a wrapper defined in `drupal/civicrm.module`. D7 only has `civicrm_initialize()`.
 
 ## Module Structure
 

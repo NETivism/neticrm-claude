@@ -15,10 +15,15 @@ Applies to changes in `/xml/schema/`, `/CRM/**/DAO/`, `/neticrm/neticrm_update/u
 
 | Check | What to look for | Severity |
 |-------|-----------------|---------|
-| Idempotent guard | `ALTER TABLE` without prior `SHOW COLUMNS ... LIKE '...'` check | 🔴 Critical |
-| Create table guard | `CREATE TABLE` without prior `SHOW TABLES LIKE '...'` check | 🔴 Critical |
+| Existence guard | `ADD COLUMN`, `ADD INDEX`/`ADD CONSTRAINT`, `DROP ...`, `RENAME`, `CHANGE COLUMN` that renames, or `CREATE TABLE` without an existence check — re-running the update fails | 🔴 Critical |
+| Schema filter | `INFORMATION_SCHEMA` query without `table_schema = DATABASE()` — may match the same table in another database on the server | 🟡 Warning |
+| Static call | `CRM_Core_DAO::checkTableExists()` / `checkConstraintExists()` called statically — they are non-static and fatal on PHP 8 | 🔴 Critical |
 | Sequential number | `neticrm_xNNN.inc` — confirm NNN is next after highest existing file | 🟡 Warning |
 | Function name | `_neticrm_update_update_xNNN()` matches filename number | 🟡 Warning |
+
+Accepted existence checks: `SHOW COLUMNS/TABLES/INDEX ... LIKE`, an `INFORMATION_SCHEMA` query, `CRM_Core_DAO::checkFieldExists()` (static), `CREATE TABLE IF NOT EXISTS`, `DROP ... IF EXISTS`.
+
+Do not flag `MODIFY COLUMN`, or `CHANGE COLUMN` keeping the same name, that restates the full column definition: re-running it gives the same result.
 
 Do not flag a missing `civicrm_initialize()` in update functions: `neticrm_update_load_include()` in `neticrm_update.install` already calls it before loading each update file.
 

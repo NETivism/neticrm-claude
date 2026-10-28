@@ -27,6 +27,7 @@ Report what is actually there — not what sounds reassuring.
   - 🔴 Critical = data loss / security hole / runtime failure
   - 🟡 Warning = real correctness or convention risk
   - 🔵 Suggestion = genuinely optional improvement with a clear benefit
+- Checklist severities are defaults. The final severity must match the definitions above; downgrade a checklist default only with the reason stated in the finding (e.g. the value is `(int)`-cast before reaching SQL)
 - Do not add findings to make the report look thorough
 - Do not soften a Critical to avoid seeming harsh; do not escalate a Suggestion to a Warning to appear cautious
 - Do not add sycophantic commentary (e.g. "Overall this is a solid implementation")
@@ -168,9 +169,11 @@ Then ask:
 
 > Which range to review?
 > 1. **Uncommitted changes** (`git diff HEAD` in each repo) — staged + unstaged
-> 2. **Current branch vs develop** (`git diff origin/develop...HEAD`) — feature branch not yet merged
+> 2. **Feature branch vs its base** (`git -C <repo> diff origin/<base>...HEAD` per repo) — feature branch not yet merged
 > 3. **Recently merged into this branch** — show merge commits to pick from
 > 4. **Specific range or paste diff text**
+
+For option 2, derive `<base>` per repo by stripping the trailing `-<digits>` from its current branch (`develop-36681` → `develop`, `10.x-hotfix-45587` → `10.x-hotfix`). If a repo is on a long-lived branch (`master`, `develop`, `hotfix`, or the `N.x-` variants), its base diff is empty or mixes unrelated commits — omit option 2 for that repo and suggest reviewing by issue number (Pattern B) instead.
 
 For option 3, run:
 ```bash
@@ -252,7 +255,7 @@ Produce a **Change Overview** with these five sections. Depth scales with comple
 
 ### Commit-by-Commit Breakdown (commit-based reviews only)
 
-Applies whenever the review scope is one or more named commits (Pattern A, Pattern B, or Pattern C option 3). Skip entirely for Pattern C option 1 (uncommitted changes) and option 2 (branch diff with many unrelated commits) — there, `What Changed` above is sufficient.
+Applies whenever the review scope is one or more named commits (Pattern A, Pattern B, or Pattern C option 3). Skip entirely for Pattern C option 1 (uncommitted changes) and option 2 (feature branch diff) — there, `What Changed` above is sufficient.
 
 For each commit (group commits together only if they are sequential fixes to the same root cause — e.g. a fix + its immediate follow-up correction):
 
@@ -274,7 +277,7 @@ Inspect changed file paths to decide which checklists to load:
 | `/CRM/**/*.php`, `/api/v3/**` | `references/php-checklist.md` |
 | `/templates/**/*.tpl`, `/js/**`, `/css/**` | `references/frontend-checklist.md` |
 | `/xml/schema/**`, `/CRM/**/DAO/**`, `/neticrm/neticrm_update/**`, `*.mysql` | `references/database-checklist.md` |
-| `/neticrm/**`, `/drupal/**`, `$NETICRMP/**` | `references/drupal-checklist.md` — also run `git branch --show-current` first |
+| `/neticrm/**`, `/drupal/**`, `$NETICRMP/**` | `references/drupal-checklist.md` — run its Drupal Version Detection first |
 | **Always** (every diff) | `references/security-checklist.md` |
 
 If the user asks for `--php-only`, `--frontend-only`, `--security`, or `--db-only`, restrict to that layer plus security.
@@ -496,7 +499,7 @@ Layer labels: `[PHP]`, `[CSS]`, `[JS]`, `[Smarty]`, `[Database]`, `[Drupal]`, `[
 - State the practical consequence: who is affected, under what conditions, and why the rule exists
 - **Trigger conditions**: When an issue requires multiple conditions to trigger simultaneously, list them explicitly. Then label the practical likelihood: `(common)` — most default installations are affected; `(uncommon)` — requires a specific non-default configuration; `(rare)` — two or more uncommon conditions must coincide. Do not imply widespread impact when the actual trigger is narrow.
 - **UI reachability**: Consider whether a user can actually reach this code path through normal UI operations. If the path requires configuration the UI does not expose, is blocked by upstream validation, or depends on a state the system never produces, add: `(not reachable via UI — [one-line reason])`. A finding that is not UI-reachable should be 🔵 Suggestion at most, regardless of code severity.
-  - **Exception — `[Security]` findings**: attackers do not use the UI. If the path is reachable by a crafted request (direct URL, forged POST, REST/API call, IPN/webhook), do not cap the severity; state the request that reaches it instead.
+  - **Exception — security findings** (`[Security]` label, a `SQL safety` / `XSS` / `security` subcategory, or any rule from `security-checklist.md`): attackers do not use the UI. If the path is reachable by a crafted request (direct URL, forged POST, REST/API call, IPN/webhook), do not cap the severity; state the request and the minimum privilege it needs instead.
 - For low-risk style findings (🔵), state the maintainability benefit rather than a risk scenario
 - One to two sentences maximum — do not pad
 
