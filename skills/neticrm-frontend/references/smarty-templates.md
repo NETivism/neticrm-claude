@@ -14,7 +14,9 @@
 
 ## Smarty Version
 
-CiviCRM uses **Smarty 2**. Some Smarty 3 features are not available.
+CiviCRM uses **Smarty 2** (2.6.32). Some Smarty 3 features are not available.
+
+**There is no auto-escaping.** `{$var}` prints the value as-is. See [Security and Escaping](#security-and-escaping).
 
 ## Basic Syntax
 
@@ -380,41 +382,47 @@ cj(document).ready(function($) {
 
 ## Security and Escaping
 
+Smarty 2 does **not** escape anything by default. `{$var}` prints raw markup, and neither Drupal 10 (CiviCRM page content is wrapped in `Markup::create()`) nor PHPIDS (it only inspects `$_REQUEST`, not JSON bodies) filters it afterwards. Every value that came from a user or from the database must be escaped where it is printed.
+
 ### Escaping Output
 
 ```smarty
-{* HTML escape (default when using {$var}) *}
+{* HTML text and attribute values *}
 {$userInput|escape}
+<div title="{$userInput|escape}">
 
-{* JavaScript context *}
-{$var|escape:'javascript'}
+{* JavaScript string context *}
 <script>var data = '{$data|escape:'javascript'}';</script>
 
-{* URL context *}
+{* URL query parameter *}
 <a href="?name={$name|escape:'url'}">Link</a>
 
-{* HTML entities *}
-{$html|escape:'htmlall'}
+{* Escape first, then convert newlines: the other order turns <br /> into text *}
+{$description|escape|nl2br}
+
+{* textarea content is escaped too, otherwise </textarea> breaks out of it.
+   The browser decodes the entities, so the textarea value stays the original text *}
+<textarea>{$outputText|escape}</textarea>
 ```
+
+**Never use `|escape:'htmlall'`.** In Smarty 2 it calls `htmlentities()` with the default `ISO-8859-1` charset, which treats each byte of multi-byte UTF-8 text as a Latin-1 character: a two-character Chinese word comes out as `&aelig;&acute;&raquo;...` garbage. Plain `|escape` (`htmlspecialchars()`) only touches `& < > " '` and keeps Chinese intact.
 
 ### When to Escape
 
 1. **User input**: Always escape user-provided data
-2. **Database values**: Escape when displaying in HTML
+2. **Database values**: Escape when displaying in HTML — including admin-only pages. Data saved by a low-privilege user through an AJAX endpoint is later shown to administrators
 3. **JavaScript strings**: Use `|escape:'javascript'` or `{ts escape='js'}`
 4. **URLs**: Use `|escape:'url'` for query parameters
 
 ### Trusted Content
 
 ```smarty
-{* When content is already HTML and trusted *}
+{* Only for HTML that is meant to be rendered and comes from a trusted source,
+   e.g. rich text sanitized with CRM_Utils_String::htmlPurifier() *}
 {$richTextContent}
-
-{* Explicit no-escape *}
-{$trustedHtml nofilter}
 ```
 
-**Warning**: Only use unescaped output for trusted, sanitized content.
+Smarty 2 has no `nofilter` keyword; leaving out `|escape` is the only way to print raw HTML. Do it only for content that is HTML by design and sanitized or admin-authored — never for free text such as names, titles, notes or AI output.
 
 ## Common Patterns
 
@@ -563,6 +571,8 @@ if (x > 0) { doSomething(); }
 {* DO *}
 <div>{$userComment|escape}</div>
 ```
+
+This applies to every variable that holds free text from users or the database, not only obvious form input. Example: role, tone and content typed into the AI copywriter were printed raw on the admin list page, so any user with `access CiviCRM` could run script in an administrator's browser (#46672).
 
 ### ❌ Hardcoded URLs
 

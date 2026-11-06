@@ -39,6 +39,16 @@ CRM_Contribute_Form_Contribution → /CRM/Contribute/Form/Contribution.php
 - **Braces**: opening brace same line; `else`/`elseif`/`catch` on next line after `}`
 - **PHP Version**: 7.3+ compatible
 
+## Security Rules (must follow)
+
+1. **Route permission is coarse.** `access CiviCRM` on a route does not decide which records a user may touch. Every record id taken from the request is checked against the current user in the handler, and "not found" and "not yours" return the same response.
+2. **Shared data is filtered in the query.** For records shared on purpose (e.g. templates), the sharing condition is part of the lookup (`WHERE is_template = 1`), not a check after fetching by id.
+3. **Return only the fields the client uses.** No `SELECT *` or full-row `json_encode()` in responses; log-like columns (`post_data`, `return_data`) leak private content.
+4. **Compare tokens strictly and reject empty ones.** `CRM_Core_Key::validate()` returns NULL on failure, and `NULL == ''` is TRUE.
+5. **JSON bodies are raw input.** `php://input` bypasses `CRM_Utils_Request` and PHPIDS — validate types yourself; escaping happens where the value is printed (Smarty has no auto-escaping, see neticrm-frontend).
+
+Details and code: [php-patterns.md](references/php-patterns.md) — 8. Security, 9. Custom AJAX Endpoints.
+
 ## Development Workflow
 
 1. **Identify the correct layer** — business logic → BAO, form handling → Form, external access → API
@@ -49,7 +59,7 @@ CRM_Contribute_Form_Contribution → /CRM/Contribute/Form/Contribution.php
 
 ## References
 
-- **PHP Patterns**: See [php-patterns.md](references/php-patterns.md) — BAO/Form class structure, routing, permissions, translations, common utilities, testing, security
+- **PHP Patterns**: See [php-patterns.md](references/php-patterns.md) — BAO/Form class structure, routing, permissions, translations, common utilities, testing, security, custom AJAX endpoints (per-record checks, tokens, response fields)
 - **Hook System**: See [hook-system.md](references/hook-system.md) — form hooks, data hooks (pre/post), CRM_Utils_Hook methods, real module examples
 - **Database Schema**: See [database-schema.md](references/database-schema.md) — XML schema structure, field types/attributes, naming conventions, index/FK patterns, path lookup; **includes GenCode workflow (ask developer for environment-specific command before running)**
 - **PHP Coding Style**: See [php-coding-style.md](references/php-coding-style.md) — full PSR1/PSR2/PSR12 rules, brace position, constant case, array syntax, operator spacing, php-cs-fixer usage

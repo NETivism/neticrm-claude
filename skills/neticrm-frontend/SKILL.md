@@ -34,6 +34,14 @@ This skill provides project-specific frontend development standards for netiCRM/
 4. **Accessibility**: Use semantic HTML and proper ARIA attributes
 5. **Localization**: Always use translation functions for user-facing text
 
+## Security Rules (must follow)
+
+Nothing between the database and the browser filters markup: Smarty 2 has no auto-escaping, Drupal 10 passes CiviCRM content through `Markup::create()`, and PHPIDS does not see JSON request bodies.
+
+1. **Smarty**: `{$var|escape}` for every user or database value, admin pages included. `|escape|nl2br` in that order; escape `<textarea>` content too. Never `|escape:'htmlall'` (it garbles UTF-8 Chinese). See `references/smarty-templates.md` — Security and Escaping.
+2. **JS**: never put AJAX responses, user input, AI output or other users' records into `.html()`, `innerHTML` or template-literal markup unescaped — text and attribute positions alike. Use `.text()`, or escape every value. Never pass user values to `cj(...)`. See `references/javascript-patterns.md` — Inserting Data as HTML.
+3. **Escape where it is printed**, not where it is saved: one stored value can reach several pages (user panel, shared list, admin list), and each of them must escape it.
+
 ## Development Workflow
 
 1. **Check References First**: Before writing code, review the relevant reference file
@@ -112,6 +120,10 @@ Solution: Use event delegation — `cj(document).on('event', '.selector', fn)`. 
 ### Smarty parse error with JavaScript `{ }` braces
 Cause: Smarty interprets `{` and `}` inside `<script>` blocks
 Solution: Wrap all inline JavaScript in `{literal}...{/literal}`. See `references/smarty-templates.md` — Asset Loading section.
+
+### Saved text runs as script on another page (stored XSS)
+Cause: `{$var}` without `|escape` (Smarty 2 does not escape by default), or server data concatenated into `.html()` / template-literal markup
+Solution: Escape at every place the value is printed — `{$var|escape}` in Smarty, `.text()` or an `escapeHtml()` on every value in JS. Search for every page that displays the same field, not only the one you are working on. See `references/smarty-templates.md` — Security and Escaping, and `references/javascript-patterns.md` — Inserting Data as HTML.
 
 ### Translated string breaks JavaScript
 Cause: `{ts}` output in JS context without escaping quotes

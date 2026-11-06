@@ -483,6 +483,8 @@ var $elements = cj('.my-class');
 var $parent = $element.closest('.parent-class');
 
 // Modify content
+// .html() parses markup: static strings only. For server or user data see
+// "Inserting Data as HTML" under Anti-Patterns.
 $element.html('<strong>New content</strong>');
 $element.text('Plain text');
 $element.val('Input value');
@@ -512,7 +514,7 @@ $element.before('<div>Before</div>');
 // Set data
 cj('#element').data('contact-id', 123);
 
-// Get data
+// Get data (.data() converts numeric / JSON-like strings; use .attr('data-x') for user text)
 var contactId = cj('#element').data('contact-id');
 
 // From HTML
@@ -706,6 +708,37 @@ $element.html('New content');
 ```
 
 **However**, using native JS for a different purpose in the same file is fine. The rule is about **consistency within a logical unit**, not about banning native JS from jQuery files entirely. See [Native JS Usage](#native-js-usage) for when to choose each approach.
+
+### ❌ Inserting Data as HTML
+
+Anything returned by an AJAX endpoint, read from the page, or typed by a user is untrusted — including AI replies and records other users saved (shared templates turn this into cross-user stored XSS, #46672).
+
+```javascript
+// DON'T: data inside markup, in text or attribute position
+$list.html(`<div class="item" data-role="${item.role}">${item.title}</div>`);
+element.innerHTML = response.message;
+cj(value); // a string starting with "<" is parsed and created as HTML
+
+// DO: plain text
+$element.text(item.title);
+
+// DO: when markup has to be built, escape every value, attributes included
+var escapeHtml = function(value) {
+  return String(value === undefined || value === null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+$list.html(`<div class="item" data-role="${escapeHtml(item.role)}">${escapeHtml(item.title)}</div>`);
+```
+
+- There is no shared helper; `packages/AICompletion/AICompletion.js` defines the local `escapeHtml()` above. Copy it rather than writing a partial one (all five characters are needed for attribute positions).
+- Escaping is per character, so streamed chunks can be escaped one by one and appended.
+- Reading values back: `.attr('data-role')` returns the original text (the browser decodes entities). `.html()` returns the escaped form — use `.text()` to get plain text, e.g. for a copy button.
+- Use `.attr('data-x')`, not `.data('x')`, for user text: `.data()` converts `"2024"` to a number and `"{...}"` to an object, so string methods on it throw.
+- Do not build selectors from user values (`find('option[value="' + value + '"]')`); a `"` in the value throws a syntax error. Filter with `.filter(function() { return this.value === value; })`.
 
 ## Performance Best Practices
 

@@ -9,6 +9,7 @@
 6. [Common Utilities](#6-common-utilities)
 7. [Testing](#7-testing)
 8. [Security](#8-security)
+9. [Custom AJAX Endpoints](#9-custom-ajax-endpoints)
 
 ---
 
@@ -322,16 +323,68 @@ CRM_Core_DAO::executeQuery("SELECT * FROM civicrm_contact WHERE email = '$email'
 
 ### Output escaping
 ```php
-// In PHP output
+// Plain text printed from PHP
 htmlspecialchars($value, ENT_QUOTES, 'UTF-8')
 
-// CiviCRM helper
-CRM_Utils_String::escapeHtml($value)
+// HTML that is meant to be rendered (rich text): strip unsafe tags/attributes
+CRM_Utils_String::htmlPurifier($html)
 ```
+
+There is no `CRM_Utils_String::escapeHtml()`. Values passed to Smarty are escaped in the template (`{$var|escape}`) — Smarty 2 does not do it automatically; see the neticrm-frontend skill.
 
 ### Checklist before submitting PHP code
 - [ ] Permission checked before accessing/modifying data
+- [ ] Every record id taken from the request is checked against the current user (see [Custom AJAX Endpoints](#9-custom-ajax-endpoints))
 - [ ] All SQL uses parameterized queries
 - [ ] All user-facing strings use `ts()`
-- [ ] No sensitive data logged or exposed
+- [ ] No sensitive data logged or exposed; responses only carry the fields the client needs
 - [ ] `CRM_Utils_Request::retrieve()` used for URL parameters (not `$_GET`)
+
+---
+
+## 9. Custom AJAX Endpoints
+
+Handlers in `CRM/<Component>/Page/AJAX.php` that read a JSON body from `php://input` and answer with `json_encode()` + `CRM_Utils_System::civiExit()` (e.g. `CRM_AI_Page_AJAX`). Routes live in `CRM/Core/xml/Menu/*.xml`. These are the endpoints the security issues of #46672 were found in.
+
+### What the route does not protect
+- `<access_arguments>access CiviCRM</access_arguments>` only means "a logged-in staff user". It says nothing about **which records** that user may read or change.
+- A JSON body bypasses `CRM_Utils_Request` type checks and PHPIDS (`CRM_Core_IDS` only inspects `$_REQUEST`). Validate type and format yourself and treat every value as raw text.
+- Keep the exact `Content-Type: application/json` check on POST handlers: a cross-site page cannot send that content type without a CORS preflight, and CORS is not enabled by default.
+
+### Check every record id from the request
+```php
+$session = CRM_Core_Session::singleton();
+if (!CRM_AI_BAO_AICompletion::isRecordOwner($id, $session->get('userID'))) {
+  // Same answer for "does not exist" and "not yours", so ids cannot be probed
+  self::responseError(['status' => 0, 'message' => 'The record was not found.'], self::HTTP_FORBIDDEN);
+}
+```
+
+```php
+// Ownership helper: empty ids fail, compare as integers
+public static function isRecordOwner($id, $contactId) {
+  if (empty($id) || empty($contactId)) {
+    return FALSE;
+  }
+  $ownerId = CRM_Core_DAO::getFieldValue('CRM_AI_DAO_AICompletion', $id, 'contact_id');
+  return !empty($ownerId) && (int) $ownerId === (int) $contactId;
+}
+```
+
+- **Records shared on purpose** (templates, published items): put the sharing condition into the lookup itself, e.g. `['id' => $id, 'is_template' => 1]` passed to `commonRetrieve()`. Looking the row up by id alone returns private rows too.
+- **Where the check lives**: in the AJAX handler when the BAO method is also called by admin forms that legitimately edit other people's records (moving it into the BAO breaks them); in the BAO only when every caller needs it.
+- Ids are sequential integers — assume they will be guessed.
+
+### Tokens and keys
+```php
+// CRM_Core_Key::validate() returns NULL on failure, and NULL == '' is TRUE,
+// so a loose comparison lets an empty token through
+$isValid = !empty($token) && CRM_Core_Key::validate($token, $name) === $token;
+```
+
+### Return only what the client uses
+- Build the response from an explicit list of columns. Do not `SELECT *` or `json_encode()` a full `commonRetrieve()` row, especially for data other users can read.
+- Log-like columns are the usual leak: in #46672 a template's `post_data` (the raw request sent to OpenAI) carried the earlier, private turns of the conversation to every user who opened the template list, although the UI only showed role, tone and content.
+
+### Saved values are printed elsewhere
+Free text saved through an endpoint (names, titles, notes, AI output) is later shown on other pages — admin lists and view pages included. Each of those templates must escape it; see the neticrm-frontend skill, Security Rules.
